@@ -1,0 +1,59 @@
+---
+/**
+ * Footer — minimal, on-brand.
+ * Logo + legal links + social hint.
+ */
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer
+  class="border-t py-10"
+  style="border-color: var(--border); background: var(--background);"
+>
+  <div class="mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 lg:flex-row lg:justify-between lg:px-8">
+    <!-- Logo -->
+    <a href="/" aria-label="Outzero home">
+      <img
+        src="/images/outzero_logo_white.svg"
+        alt="Outzero"
+        class="h-5 w-auto footer-logo"
+      />
+    </a>
+
+    <!-- Links -->
+    <div class="flex items-center gap-6 text-xs font-light" style="color: var(--text-secondary);">
+      <a
+        href="https://web.outzero.app"
+        class="transition-colors hover:text-[var(--text-primary)]"
+      >
+        Open App
+      </a>
+      <span style="color: var(--border);">|</span>
+      <a
+        href="https://web.outzero.app"
+        class="transition-colors hover:text-[var(--text-primary)]"
+      >
+        Privacy
+      </a>
+      <span style="color: var(--border);">|</span>
+      <a
+        href="https://web.outzero.app"
+        class="transition-colors hover:text-[var(--text-primary)]"
+      >
+        Terms
+      </a>
+    </div>
+
+    <!-- Copyright -->
+    <p class="text-xs font-light" style="color: var(--text-secondary);">
+      &copy; {currentYear} Outzero. All rights reserved.
+    </p>
+  </div>
+</footer>
+
+<style>
+  [data-theme="light"] .footer-logo {
+    filter: brightness(0);
+  }
+</style>

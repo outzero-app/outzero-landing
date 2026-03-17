@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+ * OUTZERO DESIGN SYSTEM
+ * Mirrors lib/src/theme/app_theme.dart from the Flutter app.
+ * NEVER hardcode colors — always use CSS custom properties.
+ * ==========================================================================*/
+
+/* --------------------------------------------------------------------------
+ * @font-face — Poppins (bundled, 3 weights per STYLE_GUIDE.md)
+ * --------------------------------------------------------------------------*/
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --------------------------------------------------------------------------
+ * Tailwind v4 — Theme configuration via @theme
+ * --------------------------------------------------------------------------*/
+@theme {
+  /* --- Primary colors (from STYLE_GUIDE.md) --- */
+  --color-primary-black: #000000;
+  --color-primary-white: #FFFFFF;
+  --color-brand-green: #CDFAB1;
+  --color-brand-green-dark: #2B4F0A;
+  --color-dark-grey: #424242;
+  --color-light-grey: #B3B4B5;
+
+  /* --- Secondary / accent colors --- */
+  --color-accent-blue: #73ABBF;
+  --color-accent-red: #945C5C;
+  --color-accent-green: #85AD69;
+  --color-accent-purple: #6970AD;
+  --color-accent-yellow: #E0C787;
+  --color-accent-orange: #FF9800;
+
+  /* --- Structural --- */
+  --color-splash-bg: #121212;
+  --color-marker-dark: #2D2D2D;
+  --color-marker-light: #E0E0E0;
+
+  /* --- Font family --- */
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- Border radius (consistent 8px across the app) --- */
+  --radius-brand: 8px;
+}
+
+/* --------------------------------------------------------------------------
+ * CSS Custom Properties — Semantic tokens (dark theme = default)
+ *
+ * These map 1:1 to AppColorScheme getters in app_theme.dart.
+ * Switch theme by overriding inside [data-theme="light"].
+ * --------------------------------------------------------------------------*/
+:root {
+  /* Layout */
+  --background: var(--color-primary-black);
+  --surface: var(--color-dark-grey);
+  --elevated-surface: var(--color-primary-white);
+
+  /* Text */
+  --text-primary: var(--color-primary-white);
+  --text-secondary: var(--color-light-grey);
+
+  /* Brand accent */
+  --tag-green: var(--color-brand-green);
+  --tag-green-fg: var(--color-primary-black);
+
+  /* Interactive */
+  --button-bg: var(--color-dark-grey);
+  --button-text: var(--color-primary-white);
+  --primary-button-text: var(--color-primary-black);
+  --icon-color: var(--color-primary-white);
+  --disabled: var(--color-light-grey);
+  --border: var(--color-dark-grey);
+
+  /* Form */
+  --input-bg: var(--color-light-grey);
+  --input-placeholder: var(--color-dark-grey);
+  --input-text: var(--color-primary-black);
+  --input-focus-border: var(--color-primary-white);
+
+  /* State */
+  --error: var(--color-accent-red);
+  --success: var(--color-accent-green);
+  --warning: var(--color-accent-yellow);
+  --pending: var(--color-accent-orange);
+
+  /* Brand-specific */
+  --social-button: var(--color-accent-blue);
+  --admin-action: var(--color-accent-purple);
+}
+
+/* --------------------------------------------------------------------------
+ * Light theme overrides
+ * --------------------------------------------------------------------------*/
+[data-theme="light"] {
+  --background: var(--color-primary-white);
+  --surface: var(--color-light-grey);
+  --elevated-surface: var(--color-light-grey);
+
+  --text-primary: var(--color-primary-black);
+  --text-secondary: var(--color-dark-grey);
+
+  --tag-green: var(--color-brand-green-dark);
+  --tag-green-fg: var(--color-primary-white);
+
+  --button-bg: var(--color-accent-blue);
+  --button-text: var(--color-primary-white);
+  --primary-button-text: var(--color-primary-black);
+  --icon-color: var(--color-primary-black);
+  --disabled: var(--color-light-grey);
+  --border: var(--color-dark-grey);
+
+  --input-bg: var(--color-primary-white);
+  --input-placeholder: var(--color-dark-grey);
+  --input-text: var(--color-primary-black);
+  --input-focus-border: var(--color-accent-blue);
+
+  --error: var(--color-accent-red);
+  --success: var(--color-accent-green);
+  --warning: var(--color-accent-yellow);
+  --pending: var(--color-accent-orange);
+
+  --social-button: var(--color-accent-blue);
+  --admin-action: var(--color-accent-purple);
+}
+
+/* --------------------------------------------------------------------------
+ * Global base styles
+ * --------------------------------------------------------------------------*/
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  color: var(--text-primary);
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection highlight using brand green */
+::selection {
+  background-color: var(--color-brand-green);
+  color: var(--color-primary-black);
+}
+
+/* Scrollbar (dark themed) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface);
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+ * Utility: spot-type SVG icon color override
+ * The source SVGs use fill="#fff". On the landing we want them to inherit
+ * the current text/icon color via CSS filter or currentColor.
+ * --------------------------------------------------------------------------*/
+.spot-icon {
+  filter: brightness(0) invert(1);
+}
+
+[data-theme="light"] .spot-icon {
+  filter: brightness(0);
+}

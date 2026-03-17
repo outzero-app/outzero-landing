@@ -1,0 +1,64 @@
+---
+/**
+ * Final CTA section — full-width, brand green accent.
+ * Mirrors the primary button style from the Flutter app (B1 token).
+ */
+---
+
+<section class="py-20 lg:py-28">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div
+      class="relative overflow-hidden rounded-2xl px-8 py-16 text-center sm:px-16 sm:py-20"
+      style="background: var(--surface);"
+    >
+      <!-- Decorative gradient blobs -->
+      <div
+        class="absolute -left-20 -top-20 h-60 w-60 rounded-full opacity-20 blur-[80px]"
+        style="background: var(--color-brand-green);"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="absolute -bottom-20 -right-20 h-48 w-48 rounded-full opacity-15 blur-[60px]"
+        style="background: var(--color-accent-blue);"
+        aria-hidden="true"
+      ></div>
+
+      <!-- Content -->
+      <div class="relative z-10">
+        <h2
+          class="text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
+          style="color: var(--text-primary); letter-spacing: -0.8px;"
+        >
+          Ready for your next adventure?
+        </h2>
+        <p
+          class="mx-auto mt-4 max-w-xl text-sm font-light sm:text-base"
+          style="color: var(--text-secondary);"
+        >
+          OUTZERO is more than an app — it&apos;s a community of adventurers.
+          Join us and be part of something bigger. Together, we can discover,
+          protect and share the best spots on the planet.
+        </p>
+
+        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <a
+            href="https://web.outzero.app"
+            class="group inline-flex items-center gap-2 rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-8 py-3.5 text-base font-semibold text-[var(--tag-green-fg)] transition-all hover:scale-105 active:scale-95 sm:text-lg"
+          >
+            Open App
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 transition-transform group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

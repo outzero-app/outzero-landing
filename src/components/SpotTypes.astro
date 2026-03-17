@@ -1,0 +1,76 @@
+---
+/**
+ * Spot types showcase — horizontal scrollable row on mobile,
+ * responsive grid on larger screens.
+ * Uses the actual spot-type SVG icons from the Flutter app.
+ */
+
+const spotTypes = [
+  { code: "SUR", name: "Surf", icon: "/icons/spots/surf.svg" },
+  { code: "BEA", name: "Beaches", icon: "/icons/spots/beach.svg" },
+  { code: "SUM", name: "Summits", icon: "/icons/spots/summit.svg" },
+  { code: "VWP", name: "Viewpoints", icon: "/icons/spots/viewpoint.svg" },
+  { code: "CLJ", name: "Cliff Jumping", icon: "/icons/spots/cliff_jumping.svg" },
+  { code: "WTF", name: "Waterfalls", icon: "/icons/spots/waterfall.svg" },
+  { code: "LAK", name: "Lakes", icon: "/icons/spots/lake.svg" },
+  { code: "NAT", name: "Natural Pools", icon: "/icons/spots/natural_pools.svg" },
+  { code: "CAV", name: "Caves", icon: "/icons/spots/caves.svg" },
+  { code: "DIV", name: "Diving", icon: "/icons/spots/diving.svg" },
+  { code: "ADV", name: "Adventure", icon: "/icons/spots/adventure.svg" },
+];
+---
+
+<section class="py-20 lg:py-28">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <!-- Section header -->
+    <div class="text-center">
+      <h2
+        class="text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
+        style="color: var(--text-primary); letter-spacing: -0.8px;"
+      >
+        Every type of adventure
+      </h2>
+      <p
+        class="mx-auto mt-3 max-w-xl text-sm font-light sm:text-base"
+        style="color: var(--text-secondary);"
+      >
+        From surfing on deserted beaches to epic mountain summits —
+        explore outdoor spots curated by the community.
+      </p>
+    </div>
+
+    <!-- Spot types grid -->
+    <div class="mt-12 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 sm:gap-4">
+      {spotTypes.map((spot) => (
+        <a
+          href="https://web.outzero.app"
+          class="spot-type-card group flex flex-col items-center gap-2.5 rounded-[var(--radius-brand)] border border-[var(--border)] p-4 transition-all hover:border-[var(--tag-green)] hover:scale-105 sm:gap-3 sm:p-5"
+          style="background: var(--surface);"
+        >
+          <img
+            src={spot.icon}
+            alt={spot.name}
+            class="spot-icon h-8 w-8 transition-transform group-hover:scale-110 sm:h-10 sm:w-10"
+            loading="lazy"
+          />
+          <span
+            class="text-center text-[10px] font-semibold leading-tight sm:text-xs"
+            style="color: var(--text-primary);"
+          >
+            {spot.name}
+          </span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .spot-type-card:hover {
+    box-shadow: 0 0 20px rgba(205, 250, 177, 0.1);
+  }
+
+  [data-theme="light"] .spot-type-card:hover {
+    box-shadow: 0 0 20px rgba(43, 79, 10, 0.08);
+  }
+</style>
