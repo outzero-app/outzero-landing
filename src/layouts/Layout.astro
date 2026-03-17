@@ -1,41 +1,51 @@
 ---
 import "../styles/global.css";
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
 
 interface Props {
+  locale: Locale;
   title?: string;
   description?: string;
 }
 
-const {
-  title = "Outzero — Discover Amazing Spots Around the World",
-  description = "Outzero is a community of adventurers discovering, sharing and saving the best outdoor spots on the planet. Surf, beaches, waterfalls, summits and more.",
-} = Astro.props;
+const { locale, title, description } = Astro.props;
+const strings = t(locale);
+const pageTitle = title ?? strings.meta_title;
+const pageDesc = description ?? strings.meta_description;
+const langAttr = locale === "es" ? "es" : "en";
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang={langAttr} data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/favicon.png" />
 
     <!-- SEO -->
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDesc} />
     <meta name="theme-color" content="#000000" />
+
+    <!-- Alternate languages -->
+    <link rel="alternate" hreflang="en" href="https://outzero.app/" />
+    <link rel="alternate" hreflang="es" href="https://outzero.app/es/" />
+    <link rel="alternate" hreflang="x-default" href="https://outzero.app/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDesc} />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:url" content="https://outzero.app" />
     <meta property="og:site_name" content="Outzero" />
+    <meta property="og:locale" content={locale === "es" ? "es_ES" : "en_US"} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDesc} />
     <meta name="twitter:image" content="/og-image.png" />
 
     <!-- Preload critical fonts -->

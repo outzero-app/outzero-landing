@@ -1,10 +1,13 @@
 ---
-/**
- * Footer — minimal, on-brand.
- * Logo + legal links + social hint.
- */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
 
-const currentYear = new Date().getFullYear();
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
 ---
 
 <footer
@@ -27,27 +30,27 @@ const currentYear = new Date().getFullYear();
         href="https://web.outzero.app"
         class="transition-colors hover:text-[var(--text-primary)]"
       >
-        Open App
+        {strings.footer_open_app}
       </a>
       <span style="color: var(--border);">|</span>
       <a
-        href="https://web.outzero.app"
+        href="https://web.outzero.app/account/privacy-policy"
         class="transition-colors hover:text-[var(--text-primary)]"
       >
-        Privacy
+        {strings.footer_privacy}
       </a>
       <span style="color: var(--border);">|</span>
       <a
-        href="https://web.outzero.app"
+        href="https://web.outzero.app/account/terms-of-use"
         class="transition-colors hover:text-[var(--text-primary)]"
       >
-        Terms
+        {strings.footer_terms}
       </a>
     </div>
 
     <!-- Copyright -->
     <p class="text-xs font-light" style="color: var(--text-secondary);">
-      &copy; {currentYear} Outzero. All rights reserved.
+      {strings.footer_copyright}
     </p>
   </div>
 </footer>

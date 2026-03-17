@@ -1,53 +1,23 @@
 ---
-/**
- * Features section — highlights the main app capabilities.
- * Alternating layout on desktop, stacked on mobile.
- * Uses semantic tokens everywhere.
- */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
 
 const features = [
-  {
-    title: "Interactive Map",
-    description:
-      "Explore thousands of spots on an interactive map with filters by type, area-based search, satellite view and spot clustering. Find your next destination visually.",
-    icon: "map",
-  },
-  {
-    title: "Visual Routes",
-    description:
-      "Discover multi-day travel routes organized by country, with GPX tracks rendered on the map, daily itineraries and waypoints for every stop.",
-    icon: "route",
-  },
-  {
-    title: "Real Media",
-    description:
-      "Every spot comes with real photos and videos uploaded by the community — no stock images. See the exact conditions before you go.",
-    icon: "media",
-  },
-  {
-    title: "Community Driven",
-    description:
-      "Upload your own discoveries, rate spots, save favorites and share with the global community of adventurers. Together we map the planet.",
-    icon: "community",
-  },
-  {
-    title: "Works Everywhere",
-    description:
-      "Available on iOS, Android and the web — with a responsive desktop layout, shareable URLs and browser history support.",
-    icon: "devices",
-  },
-  {
-    title: "Outzero+",
-    description:
-      "Go premium for offline maps, satellite view, advanced filters and an ad-free experience. Support the project from 1.99\u00A0\u20AC/month.",
-    icon: "plus",
-  },
+  { title: strings.feature_map_title, description: strings.feature_map_desc, icon: "map" },
+  { title: strings.feature_routes_title, description: strings.feature_routes_desc, icon: "route" },
+  { title: strings.feature_media_title, description: strings.feature_media_desc, icon: "media" },
+  { title: strings.feature_community_title, description: strings.feature_community_desc, icon: "community" },
+  { title: strings.feature_multiplatform_title, description: strings.feature_multiplatform_desc, icon: "devices" },
+  { title: strings.feature_plus_title, description: strings.feature_plus_desc, icon: "plus" },
 ];
 
-/**
- * Returns an inline SVG icon for each feature.
- * Kept inline to use currentColor for theme adaptation.
- */
 const icons: Record<string, string> = {
   map: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-7 w-7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503-11.307a18.48 18.48 0 01-1.756-.996l-.289-.167a4.5 4.5 0 00-4.916 0l-.289.167A18.48 18.48 0 016 6.349v8.573c0 .658.29 1.282.796 1.706l4.476 3.745a1.5 1.5 0 001.956 0l4.476-3.745A2.25 2.25 0 0018 14.922V6.35a18.48 18.48 0 01-2.247-1.307z"/></svg>`,
   route: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-7 w-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>`,
@@ -66,20 +36,19 @@ const icons: Record<string, string> = {
         class="inline-block rounded-full px-4 py-1 text-xs font-semibold tracking-wider uppercase"
         style="background: var(--tag-green); color: var(--tag-green-fg);"
       >
-        Features
+        {strings.features_label}
       </span>
       <h2
         class="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
         style="color: var(--text-primary); letter-spacing: -0.8px;"
       >
-        Everything you need to explore
+        {strings.features_title}
       </h2>
       <p
         class="mx-auto mt-3 max-w-xl text-sm font-light sm:text-base"
         style="color: var(--text-secondary);"
       >
-        Built for adventurers, by adventurers. Every feature is designed to help you
-        discover your next destination.
+        {strings.features_subtitle}
       </p>
     </div>
 
@@ -90,23 +59,18 @@ const icons: Record<string, string> = {
           class="feature-card group rounded-[var(--radius-brand)] border border-[var(--border)] p-6 transition-all hover:border-[var(--tag-green)] sm:p-8"
           style="background: var(--surface);"
         >
-          <!-- Icon -->
           <div
             class="mb-4 inline-flex items-center justify-center rounded-[var(--radius-brand)] p-2.5"
             style="background: var(--background); color: var(--tag-green);"
           >
             <Fragment set:html={icons[feature.icon]} />
           </div>
-
-          <!-- Title -->
           <h3
             class="text-lg font-semibold sm:text-xl"
             style="color: var(--text-primary); letter-spacing: -0.3px;"
           >
             {feature.title}
           </h3>
-
-          <!-- Description -->
           <p
             class="mt-2 text-sm font-light leading-relaxed"
             style="color: var(--text-secondary);"

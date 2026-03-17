@@ -1,9 +1,16 @@
 ---
-/**
- * Top navigation bar.
- * Fixed on scroll, transparent initially, gains a backdrop on scroll (via JS).
- * Uses semantic theme tokens — never hardcoded colors.
- */
+import type { Locale } from "../i18n/translations";
+import { t, alternateLocale, localePrefix } from "../i18n/translations";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
+const altLocale = alternateLocale(locale);
+const altPath = localePrefix(altLocale) || "/";
+const altLabel = altLocale.toUpperCase();
 ---
 
 <nav
@@ -12,7 +19,7 @@
 >
   <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
     <!-- Logo -->
-    <a href="/" class="flex items-center gap-2" aria-label="Outzero home">
+    <a href={localePrefix(locale) || "/"} class="flex items-center" aria-label="Outzero home">
       <img
         src="/images/outzero_logo_white.svg"
         alt="Outzero"
@@ -20,17 +27,29 @@
       />
     </a>
 
-    <!-- CTA -->
-    <a
-      href="https://web.outzero.app"
-      class="rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-5 py-2 text-sm font-semibold text-[var(--tag-green-fg)] transition-transform hover:scale-105 active:scale-95"
-    >
-      Open App
-    </a>
+    <!-- Right side: lang switcher + CTA -->
+    <div class="flex items-center gap-3 sm:gap-4">
+      <!-- Language switcher -->
+      <a
+        href={altPath}
+        class="rounded-[var(--radius-brand)] border border-[var(--border)] px-2.5 py-1 text-xs font-semibold transition-colors hover:border-[var(--text-secondary)]"
+        style="color: var(--text-secondary);"
+        aria-label={`Switch to ${altLocale === "es" ? "Spanish" : "English"}`}
+      >
+        {altLabel}
+      </a>
+
+      <!-- CTA -->
+      <a
+        href="https://web.outzero.app"
+        class="rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-5 py-2 text-sm font-semibold text-[var(--tag-green-fg)] transition-transform hover:scale-105 active:scale-95"
+      >
+        {strings.nav_open_app}
+      </a>
+    </div>
   </div>
 </nav>
 
-<!-- Navbar scroll effect -->
 <script>
   const navbar = document.getElementById("navbar");
   if (navbar) {

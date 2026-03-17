@@ -1,22 +1,31 @@
 ---
 /**
- * Spot types showcase — horizontal scrollable row on mobile,
- * responsive grid on larger screens.
- * Uses the actual spot-type SVG icons from the Flutter app.
+ * Spot types showcase — flowing inline layout, no cards, no links.
+ * Icons and labels displayed in a clean, organic horizontal flow
+ * with subtle separators.
  */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
 
 const spotTypes = [
-  { code: "SUR", name: "Surf", icon: "/icons/spots/surf.svg" },
-  { code: "BEA", name: "Beaches", icon: "/icons/spots/beach.svg" },
-  { code: "SUM", name: "Summits", icon: "/icons/spots/summit.svg" },
-  { code: "VWP", name: "Viewpoints", icon: "/icons/spots/viewpoint.svg" },
-  { code: "CLJ", name: "Cliff Jumping", icon: "/icons/spots/cliff_jumping.svg" },
-  { code: "WTF", name: "Waterfalls", icon: "/icons/spots/waterfall.svg" },
-  { code: "LAK", name: "Lakes", icon: "/icons/spots/lake.svg" },
-  { code: "NAT", name: "Natural Pools", icon: "/icons/spots/natural_pools.svg" },
-  { code: "CAV", name: "Caves", icon: "/icons/spots/caves.svg" },
-  { code: "DIV", name: "Diving", icon: "/icons/spots/diving.svg" },
-  { code: "ADV", name: "Adventure", icon: "/icons/spots/adventure.svg" },
+  { icon: "/icons/spots/surf.svg", name: strings.spot_surf },
+  { icon: "/icons/spots/beach.svg", name: strings.spot_beach },
+  { icon: "/icons/spots/summit.svg", name: strings.spot_summit },
+  { icon: "/icons/spots/viewpoint.svg", name: strings.spot_viewpoint },
+  { icon: "/icons/spots/cliff_jumping.svg", name: strings.spot_cliff_jumping },
+  { icon: "/icons/spots/waterfall.svg", name: strings.spot_waterfalls },
+  { icon: "/icons/spots/lake.svg", name: strings.spot_lake },
+  { icon: "/icons/spots/natural_pools.svg", name: strings.spot_natural_pools },
+  { icon: "/icons/spots/caves.svg", name: strings.spot_caves },
+  { icon: "/icons/spots/diving.svg", name: strings.spot_diving },
+  { icon: "/icons/spots/adventure.svg", name: strings.spot_adventure },
 ];
 ---
 
@@ -28,49 +37,53 @@ const spotTypes = [
         class="text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
         style="color: var(--text-primary); letter-spacing: -0.8px;"
       >
-        Every type of adventure
+        {strings.spot_types_title}
       </h2>
       <p
         class="mx-auto mt-3 max-w-xl text-sm font-light sm:text-base"
         style="color: var(--text-secondary);"
       >
-        From surfing on deserted beaches to epic mountain summits —
-        explore outdoor spots curated by the community.
+        {strings.spot_types_subtitle}
       </p>
     </div>
 
-    <!-- Spot types grid -->
-    <div class="mt-12 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 sm:gap-4">
-      {spotTypes.map((spot) => (
-        <a
-          href="https://web.outzero.app"
-          class="spot-type-card group flex flex-col items-center gap-2.5 rounded-[var(--radius-brand)] border border-[var(--border)] p-4 transition-all hover:border-[var(--tag-green)] hover:scale-105 sm:gap-3 sm:p-5"
-          style="background: var(--surface);"
-        >
+    <!-- Spot types — flowing inline layout -->
+    <div class="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-5 sm:gap-x-8 md:gap-x-10">
+      {spotTypes.map((spot, i) => (
+        <div class="spot-type-item flex items-center gap-2">
           <img
             src={spot.icon}
-            alt={spot.name}
-            class="spot-icon h-8 w-8 transition-transform group-hover:scale-110 sm:h-10 sm:w-10"
+            alt=""
+            class="spot-icon h-6 w-6 sm:h-7 sm:w-7"
             loading="lazy"
+            aria-hidden="true"
           />
           <span
-            class="text-center text-[10px] font-semibold leading-tight sm:text-xs"
+            class="text-xs font-semibold tracking-wide uppercase sm:text-sm"
             style="color: var(--text-primary);"
           >
             {spot.name}
           </span>
-        </a>
+          {i < spotTypes.length - 1 && (
+            <span
+              class="ml-4 hidden text-xs sm:ml-6 sm:inline-block md:ml-8"
+              style="color: var(--border);"
+              aria-hidden="true"
+            >
+              /
+            </span>
+          )}
+        </div>
       ))}
     </div>
   </div>
 </section>
 
 <style>
-  .spot-type-card:hover {
-    box-shadow: 0 0 20px rgba(205, 250, 177, 0.1);
+  .spot-type-item {
+    transition: opacity 0.2s ease;
   }
-
-  [data-theme="light"] .spot-type-card:hover {
-    box-shadow: 0 0 20px rgba(43, 79, 10, 0.08);
+  .spot-type-item:hover {
+    opacity: 0.7;
   }
 </style>

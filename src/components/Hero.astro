@@ -1,9 +1,13 @@
 ---
-/**
- * Hero section — full-viewport intro with CTA.
- * Background uses a subtle gradient + animated grain texture.
- * Typography follows STYLE_GUIDE.md hierarchy.
- */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
 ---
 
 <section
@@ -25,7 +29,7 @@
       <img
         src="/images/outzero_icon_white.svg"
         alt=""
-        class="h-16 w-auto opacity-80 sm:h-20 hero-icon"
+        class="h-16 w-auto opacity-90 sm:h-20 hero-icon"
         aria-hidden="true"
       />
     </div>
@@ -35,8 +39,8 @@
       class="mx-auto max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
       style="color: var(--text-primary); letter-spacing: -1px; line-height: 1.1;"
     >
-      Discover amazing spots
-      <span class="block text-[var(--tag-green)]">around the world</span>
+      {strings.hero_headline_1}
+      <span class="block text-[var(--tag-green)]">{strings.hero_headline_2}</span>
     </h1>
 
     <!-- Subheadline -->
@@ -44,9 +48,7 @@
       class="mx-auto mt-6 max-w-2xl text-base font-light sm:text-lg md:text-xl"
       style="color: var(--text-secondary); line-height: 1.6;"
     >
-      A community of adventurers sharing the best surf breaks, hidden beaches,
-      epic waterfalls, summits and secret spots — with real videos, exact
-      locations and visual routes on the map.
+      {strings.hero_subheadline}
     </p>
 
     <!-- CTA buttons -->
@@ -55,7 +57,7 @@
         href="https://web.outzero.app"
         class="group relative inline-flex items-center gap-2 rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-8 py-3.5 text-base font-semibold text-[var(--tag-green-fg)] transition-all hover:scale-105 active:scale-95 sm:text-lg"
       >
-        Open App
+        {strings.hero_cta}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-5 w-5 transition-transform group-hover:translate-x-1"
@@ -73,7 +75,7 @@
         class="inline-flex items-center gap-1.5 rounded-[var(--radius-brand)] border border-[var(--border)] px-6 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
         style="color: var(--text-primary);"
       >
-        Learn more
+        {strings.hero_learn_more}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-4 w-4"
@@ -105,7 +107,6 @@
 </section>
 
 <style>
-  /* Background gradient */
   .hero-bg {
     background: radial-gradient(
         ellipse 80% 60% at 50% 120%,
@@ -120,7 +121,6 @@
       var(--background);
   }
 
-  /* Floating glow orbs */
   .hero-orb {
     border-radius: 50%;
     filter: blur(80px);
