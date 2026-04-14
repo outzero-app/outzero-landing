@@ -1,6 +1,6 @@
 ---
 import type { Locale } from "../i18n/translations";
-import { t, alternateLocale, localePrefix } from "../i18n/translations";
+import { t, alternateLocale, localeHomePath } from "../i18n/translations";
 
 interface Props {
   locale: Locale;
@@ -9,7 +9,8 @@ interface Props {
 const { locale } = Astro.props;
 const strings = t(locale);
 const altLocale = alternateLocale(locale);
-const altPath = localePrefix(altLocale) || "/";
+const homePath = localeHomePath(locale);
+const altPath = localeHomePath(altLocale);
 const altLabel = altLocale.toUpperCase();
 ---
 
@@ -19,7 +20,7 @@ const altLabel = altLocale.toUpperCase();
 >
   <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
     <!-- Logo -->
-    <a href={localePrefix(locale) || "/"} class="flex items-center" aria-label="Outzero home">
+    <a href={homePath} class="flex items-center" aria-label="Outzero home">
       <img
         src="/images/outzero_logo_white.svg"
         alt="Outzero"
@@ -32,6 +33,8 @@ const altLabel = altLocale.toUpperCase();
       <!-- Language switcher -->
       <a
         href={altPath}
+        data-locale-switch
+        data-locale={altLocale}
         class="rounded-[var(--radius-brand)] border border-[var(--border)] px-2.5 py-1 text-xs font-semibold transition-colors hover:border-[var(--text-secondary)]"
         style="color: var(--text-secondary);"
         aria-label={`Switch to ${altLocale === "es" ? "Spanish" : "English"}`}
@@ -51,7 +54,23 @@ const altLabel = altLocale.toUpperCase();
 </nav>
 
 <script>
+  const STORAGE_KEY = "outzero-locale";
   const navbar = document.getElementById("navbar");
+  const localeSwitchLinks = document.querySelectorAll("[data-locale-switch]");
+
+  localeSwitchLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      const nextLocale = link.getAttribute("data-locale");
+      if (nextLocale === "en" || nextLocale === "es") {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, nextLocale);
+        } catch {
+          return;
+        }
+      }
+    });
+  });
+
   if (navbar) {
     window.addEventListener("scroll", () => {
       if (window.scrollY > 40) {

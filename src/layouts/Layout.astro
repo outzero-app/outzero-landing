@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
 import type { Locale } from "../i18n/translations";
-import { t } from "../i18n/translations";
+import { localeHomePath, t } from "../i18n/translations";
 
 interface Props {
   locale: Locale;
@@ -14,6 +14,51 @@ const strings = t(locale);
 const pageTitle = title ?? strings.meta_title;
 const pageDesc = description ?? strings.meta_description;
 const langAttr = locale === "es" ? "es" : "en";
+const siteUrl = "https://outzero.app";
+const pageUrl = new URL(localeHomePath(locale), siteUrl).toString();
+const englishUrl = new URL("/", siteUrl).toString();
+const spanishUrl = new URL("/es/", siteUrl).toString();
+const faviconPngUrl = new URL("/favicon.png", siteUrl).toString();
+const ogImageUrl = new URL("/og-image.png", siteUrl).toString();
+const ogLocale = locale === "es" ? "es_ES" : "en_US";
+const ogAlternateLocale = locale === "es" ? "en_US" : "es_ES";
+const shouldAutoRedirect = locale === "en";
+const structuredData = JSON.stringify([
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${siteUrl}/#organization`,
+    name: "Outzero",
+    url: siteUrl,
+    logo: {
+      "@type": "ImageObject",
+      url: faviconPngUrl,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
+    url: siteUrl,
+    name: "Outzero",
+    inLanguage: ["en", "es"],
+    publisher: {
+      "@id": `${siteUrl}/#organization`,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: pageTitle,
+    description: pageDesc,
+    inLanguage: langAttr,
+    isPartOf: {
+      "@id": `${siteUrl}/#website`,
+    },
+  },
+]);
 ---
 
 <!doctype html>
@@ -21,34 +66,88 @@ const langAttr = locale === "es" ? "es" : "en";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href={pageUrl} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.svg" />
-    <link rel="alternate icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    {
+      shouldAutoRedirect && (
+        <script is:inline>
+          const STORAGE_KEY = "outzero-locale";
+          const currentPath = window.location.pathname;
+          if (currentPath === "/" || currentPath === "/index.html") {
+            const getSavedLocale = () => {
+              try {
+                return window.localStorage.getItem(STORAGE_KEY);
+              } catch {
+                return null;
+              }
+            };
+
+            const saveLocale = (value) => {
+              try {
+                window.localStorage.setItem(STORAGE_KEY, value);
+              } catch {
+                return;
+              }
+            };
+
+            const savedLocale = getSavedLocale();
+            if (savedLocale === "es") {
+              window.location.replace("/es/");
+            } else if (savedLocale !== "en") {
+              const browserLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
+                ? navigator.languages
+                : [navigator.language];
+              const prefersSpanish = browserLanguages.some(
+                (language) => typeof language === "string" && /(^es\b)|(-ES\b)/i.test(language)
+              );
+
+              saveLocale(prefersSpanish ? "es" : "en");
+              if (prefersSpanish) {
+                window.location.replace("/es/");
+              }
+            }
+          }
+        </script>
+      )
+    }
 
     <!-- SEO -->
     <title>{pageTitle}</title>
     <meta name="description" content={pageDesc} />
+    <meta http-equiv="content-language" content={langAttr} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="application-name" content="Outzero" />
+    <meta name="apple-mobile-web-app-title" content="Outzero" />
     <meta name="theme-color" content="#000000" />
 
     <!-- Alternate languages -->
-    <link rel="alternate" hreflang="en" href="https://outzero.app/" />
-    <link rel="alternate" hreflang="es" href="https://outzero.app/es/" />
-    <link rel="alternate" hreflang="x-default" href="https://outzero.app/" />
+    <link rel="alternate" hreflang="en" href={englishUrl} />
+    <link rel="alternate" hreflang="es" href={spanishUrl} />
+    <link rel="alternate" hreflang="x-default" href={englishUrl} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDesc} />
-    <meta property="og:image" content="/og-image.png" />
-    <meta property="og:url" content="https://outzero.app" />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content={pageTitle} />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:site_name" content="Outzero" />
-    <meta property="og:locale" content={locale === "es" ? "es_ES" : "en_US"} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogAlternateLocale} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDesc} />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={pageTitle} />
+
+    <script type="application/ld+json" set:html={structuredData}></script>
 
     <!-- Preload critical fonts -->
     <link rel="preload" href="/fonts/Poppins-Light.ttf" as="font" type="font/ttf" crossorigin />

@@ -1,6 +1,6 @@
 ---
 import type { Locale } from "../i18n/translations";
-import { t } from "../i18n/translations";
+import { localeHomePath, t } from "../i18n/translations";
 
 interface Props {
   locale: Locale;
@@ -8,6 +8,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
+const homePath = localeHomePath(locale);
 ---
 
 <footer
@@ -16,7 +17,7 @@ const strings = t(locale);
 >
   <div class="mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 lg:flex-row lg:justify-between lg:px-8">
     <!-- Logo -->
-    <a href="/" aria-label="Outzero home">
+    <a href={homePath} aria-label="Outzero home">
       <img
         src="/images/outzero_logo_white.svg"
         alt="Outzero"
