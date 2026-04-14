@@ -240,13 +240,6 @@ export function localePrefix(locale: Locale): string {
   return locale === defaultLocale ? "" : `/${locale}`;
 }
 
-/**
- * Get the localized home path with a trailing slash.
- */
-export function localeHomePath(locale: Locale): string {
-  const prefix = localePrefix(locale);
-  return prefix ? `${prefix}/` : "/";
-}
 
 /**
  * Get the localized home path with a trailing slash.
