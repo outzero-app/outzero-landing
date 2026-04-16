@@ -18,7 +18,10 @@ const siteUrl = "https://outzero.app";
 const pageUrl = new URL(localeHomePath(locale), siteUrl).toString();
 const englishUrl = new URL("/", siteUrl).toString();
 const spanishUrl = new URL("/es/", siteUrl).toString();
+const faviconIcoUrl = new URL("/favicon.ico", siteUrl).toString();
+const faviconSvgUrl = new URL("/favicon.svg", siteUrl).toString();
 const faviconPngUrl = new URL("/favicon.png", siteUrl).toString();
+const manifestUrl = new URL("/site.webmanifest", siteUrl).toString();
 const ogImageUrl = new URL("/og-image.png", siteUrl).toString();
 const ogLocale = locale === "es" ? "es_ES" : "en_US";
 const ogAlternateLocale = locale === "es" ? "en_US" : "es_ES";
@@ -67,11 +70,12 @@ const structuredData = JSON.stringify([
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="canonical" href={pageUrl} />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="icon" href={faviconIcoUrl} sizes="any" />
+    <link rel="icon" type="image/svg+xml" href={faviconSvgUrl} sizes="any" />
+    <link rel="icon" type="image/png" href={faviconPngUrl} sizes="32x32" />
+    <link rel="shortcut icon" href={faviconIcoUrl} />
+    <link rel="apple-touch-icon" href={faviconPngUrl} sizes="180x180" />
+    <link rel="manifest" href={manifestUrl} />
     {
       shouldAutoRedirect && (
         <script is:inline>
