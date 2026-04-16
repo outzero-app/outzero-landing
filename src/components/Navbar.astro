@@ -4,13 +4,14 @@ import { t, alternateLocale, localeHomePath } from "../i18n/translations";
 
 interface Props {
   locale: Locale;
+  alternatePath?: string;
 }
 
-const { locale } = Astro.props;
+const { locale, alternatePath } = Astro.props;
 const strings = t(locale);
 const altLocale = alternateLocale(locale);
 const homePath = localeHomePath(locale);
-const altPath = localeHomePath(altLocale);
+const altPath = alternatePath ?? localeHomePath(altLocale);
 const altLabel = altLocale.toUpperCase();
 ---
 

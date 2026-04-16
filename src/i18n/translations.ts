@@ -70,6 +70,7 @@ export interface Translations {
   // Footer
   footer_open_app: string;
   footer_privacy: string;
+  footer_cookies: string;
   footer_terms: string;
   footer_copyright: string;
 }
@@ -142,6 +143,7 @@ export const translations: Record<Locale, Translations> = {
 
     footer_open_app: "Open App",
     footer_privacy: "Privacy Policy",
+    footer_cookies: "Cookies Policy",
     footer_terms: "Terms of Use",
     footer_copyright: `\u00A9 ${new Date().getFullYear()} Outzero. All rights reserved.`,
   },
@@ -213,6 +215,7 @@ export const translations: Record<Locale, Translations> = {
 
     footer_open_app: "Abrir App",
     footer_privacy: "Pol\u00EDtica de Privacidad",
+    footer_cookies: "Pol\u00EDtica de Cookies",
     footer_terms: "T\u00E9rminos de Uso",
     footer_copyright: `\u00A9 ${new Date().getFullYear()} Outzero. Todos los derechos reservados.`,
   },

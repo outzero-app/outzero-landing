@@ -1,0 +1,79 @@
+---
+import type { Locale } from "../i18n/translations";
+import { alternateLocale, localeHomePath } from "../i18n/translations";
+import Layout from "../layouts/Layout.astro";
+import Navbar from "./Navbar.astro";
+import Footer from "./Footer.astro";
+import { fetchLegalMarkdown, renderSimpleMarkdown } from "../lib/legal-documents";
+
+interface Props {
+  locale: Locale;
+  fileName: string;
+  pageTitle: string;
+  pageDescription: string;
+}
+
+const { locale, fileName, pageTitle, pageDescription } = Astro.props;
+const markdown = await fetchLegalMarkdown(locale, fileName);
+const contentHtml = renderSimpleMarkdown(markdown);
+const homePath = localeHomePath(locale);
+const alternatePath =
+  alternateLocale(locale) === "es"
+    ? `/es/${fileName.replace(/\.md$/, "")}`
+    : `/${fileName.replace(/\.md$/, "")}`;
+---
+
+<Layout locale={locale} title={pageTitle} description={pageDescription}>
+  <Navbar locale={locale} alternatePath={alternatePath} />
+
+  <main class="min-h-screen px-6 pb-24 pt-32 lg:px-8">
+    <div class="mx-auto max-w-4xl">
+      <a
+        href={homePath}
+        class="mb-8 inline-flex items-center gap-2 rounded-[var(--radius-brand)] border border-[var(--border)] px-4 py-2 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
+        style="color: var(--text-primary);"
+      >
+        <span aria-hidden="true">←</span>
+        <span>{locale === "es" ? "Volver" : "Back"}</span>
+      </a>
+
+      <article class="legal-document rounded-[var(--radius-brand)] border px-6 py-8 md:px-10 md:py-10" style="border-color: var(--border); background: color-mix(in srgb, var(--background) 90%, var(--surface) 10%);">
+        <Fragment set:html={contentHtml} />
+      </article>
+    </div>
+  </main>
+
+  <Footer locale={locale} />
+</Layout>
+
+<style>
+  .legal-document :global(h1) {
+    color: var(--text-primary);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    margin-bottom: 2rem;
+  }
+
+  .legal-document :global(h2) {
+    color: var(--text-primary);
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 2rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .legal-document :global(p) {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.85;
+    margin: 0 0 1rem;
+  }
+
+  .legal-document :global(h1 + h2) {
+    margin-top: 0;
+  }
+</style>

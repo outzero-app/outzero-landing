@@ -35,14 +35,21 @@ const homePath = localeHomePath(locale);
       </a>
       <span style="color: var(--border);">|</span>
       <a
-        href="https://web.outzero.app/account/privacy-policy"
+        href={locale === "es" ? "/es/privacy-policy" : "/privacy-policy"}
         class="transition-colors hover:text-[var(--text-primary)]"
       >
         {strings.footer_privacy}
       </a>
       <span style="color: var(--border);">|</span>
       <a
-        href="https://web.outzero.app/account/terms-of-use"
+        href={locale === "es" ? "/es/cookies-policy" : "/cookies-policy"}
+        class="transition-colors hover:text-[var(--text-primary)]"
+      >
+        {strings.footer_cookies}
+      </a>
+      <span style="color: var(--border);">|</span>
+      <a
+        href={locale === "es" ? "/es/terms-of-use" : "/terms-of-use"}
         class="transition-colors hover:text-[var(--text-primary)]"
       >
         {strings.footer_terms}
