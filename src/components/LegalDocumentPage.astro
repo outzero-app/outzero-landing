@@ -14,13 +14,21 @@ interface Props {
 }
 
 const { locale, fileName, pageTitle, pageDescription } = Astro.props;
-const markdown = await fetchLegalMarkdown(locale, fileName);
-const contentHtml = renderSimpleMarkdown(markdown);
+const documentData = await fetchLegalMarkdown(locale, fileName);
+const contentHtml = renderSimpleMarkdown(documentData.markdown);
 const homePath = localeHomePath(locale);
 const alternatePath =
   alternateLocale(locale) === "es"
     ? `/es/${fileName.replace(/\.md$/, "")}`
     : `/${fileName.replace(/\.md$/, "")}`;
+const lastUpdatedLabel = locale === "es" ? "Última actualización" : "Last updated";
+const lastUpdatedText = documentData.lastUpdatedAt
+  ? new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(documentData.lastUpdatedAt)
+  : null;
 ---
 
 <Layout locale={locale} title={pageTitle} description={pageDescription}>
@@ -39,6 +47,14 @@ const alternatePath =
 
       <article class="legal-document rounded-[var(--radius-brand)] border px-6 py-8 md:px-10 md:py-10" style="border-color: var(--border); background: color-mix(in srgb, var(--background) 90%, var(--surface) 10%);">
         <Fragment set:html={contentHtml} />
+
+        {
+          lastUpdatedText && (
+            <p class="legal-document__last-updated">
+              <span>{lastUpdatedLabel}:</span> {lastUpdatedText}
+            </p>
+          )
+        }
       </article>
     </div>
   </main>
@@ -75,5 +91,20 @@ const alternatePath =
 
   .legal-document :global(h1 + h2) {
     margin-top: 0;
+  }
+
+  .legal-document__last-updated {
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+  }
+
+  .legal-document__last-updated span {
+    color: var(--text-primary);
+    font-weight: 600;
   }
 </style>

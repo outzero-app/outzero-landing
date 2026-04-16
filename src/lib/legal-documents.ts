@@ -2,6 +2,13 @@ import type { Locale } from "../i18n/translations";
 
 const baseRawUrl =
   "https://raw.githubusercontent.com/outzero-app/outzero-legal-docs/main";
+const githubCommitsApiUrl =
+  "https://api.github.com/repos/outzero-app/outzero-legal-docs/commits";
+
+export interface LegalDocumentData {
+  markdown: string;
+  lastUpdatedAt: Date | null;
+}
 
 function localeFolder(locale: Locale): "en" | "es" {
   return locale === "es" ? "es" : "en";
@@ -10,24 +17,91 @@ function localeFolder(locale: Locale): "en" | "es" {
 export async function fetchLegalMarkdown(
   locale: Locale,
   fileName: string,
-): Promise<string> {
-  const response = await fetch(
-    `${baseRawUrl}/${localeFolder(locale)}/${fileName}`,
-  );
+): Promise<LegalDocumentData> {
+  const folder = localeFolder(locale);
+  const markdownResponse = await fetch(`${baseRawUrl}/${folder}/${fileName}`, {
+    cache: "no-store",
+  });
 
-  if (!response.ok) {
+  if (!markdownResponse.ok) {
     throw new Error(
-      `Failed to fetch legal document ${fileName}: ${response.status}`,
+      `Failed to fetch legal document ${fileName}: ${markdownResponse.status}`,
     );
   }
 
-  const markdown = (await response.text()).replace(/\r\n/g, "\n").trim();
+  const markdown = (await markdownResponse.text())
+    .replace(/\r\n/g, "\n")
+    .trim();
 
   if (!markdown) {
     throw new Error(`Legal document ${fileName} is empty`);
   }
 
-  return markdown;
+  const rawLastModified = markdownResponse.headers.get("last-modified");
+  const fallbackLastUpdatedAt = rawLastModified
+    ? parseDateSafely(rawLastModified)
+    : null;
+
+  let lastUpdatedAt = fallbackLastUpdatedAt;
+
+  try {
+    const commitMetadata = await fetchLatestCommitMetadata(folder, fileName);
+    lastUpdatedAt = commitMetadata.lastUpdatedAt ?? fallbackLastUpdatedAt;
+  } catch {
+    lastUpdatedAt = fallbackLastUpdatedAt;
+  }
+
+  return {
+    markdown,
+    lastUpdatedAt,
+  };
+}
+
+async function fetchLatestCommitMetadata(
+  folder: "en" | "es",
+  fileName: string,
+): Promise<{ lastUpdatedAt: Date | null }> {
+  const commitUrl = new URL(githubCommitsApiUrl);
+  commitUrl.searchParams.set("path", `${folder}/${fileName}`);
+  commitUrl.searchParams.set("page", "1");
+  commitUrl.searchParams.set("per_page", "1");
+
+  const response = await fetch(commitUrl, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/vnd.github+json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch legal commit metadata for ${fileName}: ${response.status}`,
+    );
+  }
+
+  const commits = (await response.json()) as Array<{
+    commit?: {
+      committer?: {
+        date?: string;
+      };
+    };
+  }>;
+
+  const rawDate = commits[0]?.commit?.committer?.date;
+
+  if (!rawDate) {
+    return { lastUpdatedAt: null };
+  }
+
+  return {
+    lastUpdatedAt: parseDateSafely(rawDate),
+  };
+}
+
+function parseDateSafely(value: string): Date | null {
+  const parsedDate = new Date(value);
+
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
 function escapeHtml(value: string): string {
