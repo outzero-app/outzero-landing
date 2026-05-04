@@ -23,6 +23,8 @@ export interface Translations {
   hero_subheadline: string;
   hero_cta: string;
   hero_learn_more: string;
+  hero_download_ios: string;
+  hero_download_android: string;
 
   // Spot Types
   spot_types_title: string;
@@ -89,6 +91,8 @@ export const translations: Record<Locale, Translations> = {
       "A community of adventurers sharing the best surf breaks, hidden beaches, epic waterfalls, summits and secret spots — with real videos, exact locations and visual routes on the map.",
     hero_cta: "Open App",
     hero_learn_more: "Learn more",
+    hero_download_ios: "Download on the App Store",
+    hero_download_android: "Get it on Google Play",
 
     spot_types_title: "Every type of adventure",
     spot_types_subtitle:
@@ -161,6 +165,8 @@ export const translations: Record<Locale, Translations> = {
       "Una comunidad de aventureros compartiendo los mejores breaks de surf, playas escondidas, cascadas \u00E9picas, cumbres y spots secretos \u2014 con v\u00EDdeos reales, ubicaciones exactas y rutas visuales en el mapa.",
     hero_cta: "Abrir App",
     hero_learn_more: "Saber m\u00E1s",
+    hero_download_ios: "Descargar en App Store",
+    hero_download_android: "Disponible en Google Play",
 
     spot_types_title: "Cada tipo de aventura",
     spot_types_subtitle:
