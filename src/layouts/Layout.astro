@@ -20,9 +20,12 @@ const pageUrl = new URL(localeHomePath(locale), siteOrigin).toString();
 const englishUrl = new URL("/", siteOrigin).toString();
 const spanishUrl = new URL("/es/", siteOrigin).toString();
 const faviconIcoUrl = new URL("/favicon.ico", siteOrigin).toString();
-const faviconPngUrl = new URL("/favicon-32.png", siteOrigin).toString();
 const favicon16Url = new URL("/favicon-16.png", siteOrigin).toString();
 const favicon32Url = new URL("/favicon-32.png", siteOrigin).toString();
+const favicon48Url = new URL("/favicon-48.png", siteOrigin).toString();
+const favicon96Url = new URL("/favicon-96.png", siteOrigin).toString();
+const favicon192Url = new URL("/favicon-192.png", siteOrigin).toString();
+const organizationLogoUrl = new URL("/icon-512.png", siteOrigin).toString();
 const appleTouchIconUrl = new URL("/apple-touch-icon.png", siteOrigin).toString();
 const manifestUrl = new URL("/site.webmanifest", siteOrigin).toString();
 const ogImageUrl = new URL("/og-image.png", siteOrigin).toString();
@@ -38,7 +41,9 @@ const structuredData = JSON.stringify([
     url: siteUrl,
     logo: {
       "@type": "ImageObject",
-      url: faviconPngUrl,
+      url: organizationLogoUrl,
+      width: 512,
+      height: 512,
     },
   },
   {
@@ -73,9 +78,13 @@ const structuredData = JSON.stringify([
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="canonical" href={pageUrl} />
+    <!-- Favicon: search engines require a square icon whose size is a multiple of 48px -->
     <link rel="icon" href={faviconIcoUrl} sizes="any" />
     <link rel="icon" type="image/png" href={favicon16Url} sizes="16x16" />
     <link rel="icon" type="image/png" href={favicon32Url} sizes="32x32" />
+    <link rel="icon" type="image/png" href={favicon48Url} sizes="48x48" />
+    <link rel="icon" type="image/png" href={favicon96Url} sizes="96x96" />
+    <link rel="icon" type="image/png" href={favicon192Url} sizes="192x192" />
     <link rel="shortcut icon" href={faviconIcoUrl} />
     <link rel="apple-touch-icon" href={appleTouchIconUrl} sizes="180x180" />
     <link rel="manifest" href={manifestUrl} />
@@ -141,6 +150,8 @@ const structuredData = JSON.stringify([
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDesc} />
     <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={pageTitle} />
     <meta property="og:url" content={pageUrl} />
     <meta property="og:site_name" content="Outzero" />
@@ -161,6 +172,7 @@ const structuredData = JSON.stringify([
     <link rel="preload" href="/fonts/Poppins-SemiBold.ttf" as="font" type="font/ttf" crossorigin />
   </head>
   <body class="min-h-screen overflow-x-hidden">
+    <a href="#main-content" class="skip-link">{strings.skip_to_content}</a>
     <slot />
   </body>
 </html>
