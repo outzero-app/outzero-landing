@@ -15,54 +15,58 @@ const { locale } = Astro.props;
 const strings = t(locale);
 ---
 
-<section class="py-20 lg:py-28">
+<section id="about" class="page-section" aria-labelledby="about-title">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-center">
-      <!-- Pill label -->
-      <span
-        class="inline-block rounded-full px-4 py-1 text-xs font-semibold tracking-wider uppercase"
-        style="background: var(--surface); color: var(--text-secondary);"
-      >
-        {strings.about_label}
-      </span>
+    <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.9fr_1.5fr] lg:gap-16">
+      <div class="section-intro section-intro--left lg:pt-2">
+        <p class="section-kicker section-kicker--muted">
+          {strings.about_label}
+        </p>
 
-      <!-- Large statement -->
-      <h2
-        class="mt-8 text-xl font-light leading-relaxed sm:text-2xl lg:text-3xl"
-        style="color: var(--text-primary); letter-spacing: -0.4px; line-height: 1.5;"
-        set:html={strings.about_headline.replace(
-          locale === "es"
-            ? "viajeros jóvenes, curiosos y con ganas de adrenalina"
-            : "young, curious travelers",
-          `<span class="font-semibold text-[var(--tag-green)]">${
+        <p class="section-copy max-w-sm">
+          {strings.about_side_note}
+        </p>
+      </div>
+
+      <div>
+        <h2
+          id="about-title"
+          class="text-xl font-light leading-relaxed sm:text-2xl lg:text-3xl"
+          style="color: var(--text-primary); letter-spacing: -0.4px; line-height: 1.5;"
+          set:html={strings.about_headline.replace(
             locale === "es"
               ? "viajeros jóvenes, curiosos y con ganas de adrenalina"
-              : "young, curious travelers"
-          }</span>`
-        )}
-      />
+              : "young, curious travelers",
+            `<span class="font-semibold text-[var(--tag-green)]">${
+              locale === "es"
+                ? "viajeros jóvenes, curiosos y con ganas de adrenalina"
+                : "young, curious travelers"
+            }</span>`
+          )}
+        />
 
-      <p
-        class="mt-6 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
-        style="color: var(--text-secondary); line-height: 1.7;"
-      >
-        {strings.about_paragraph_1}
-      </p>
+        <p
+          class="mt-6 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
+          style="color: var(--text-secondary); line-height: 1.7;"
+        >
+          {strings.about_paragraph_1}
+        </p>
 
-      <p
-        class="mt-4 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
-        style="color: var(--text-secondary); line-height: 1.7;"
-        set:html={strings.about_paragraph_2.replace(
-          locale === "es"
-            ? "spots increíbles que merecían ser descubiertos"
-            : "incredible spots that deserved to be discovered",
-          `<span class="font-semibold" style="color: var(--text-primary);">${
+        <p
+          class="mt-4 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
+          style="color: var(--text-secondary); line-height: 1.7;"
+          set:html={strings.about_paragraph_2.replace(
             locale === "es"
               ? "spots increíbles que merecían ser descubiertos"
-              : "incredible spots that deserved to be discovered"
-          }</span>`
-        )}
-      />
+              : "incredible spots that deserved to be discovered",
+            `<span class="font-semibold" style="color: var(--text-primary);">${
+              locale === "es"
+                ? "spots increíbles que merecían ser descubiertos"
+                : "incredible spots that deserved to be discovered"
+            }</span>`
+          )}
+        />
+      </div>
     </div>
   </div>
 </section>

@@ -29,53 +29,39 @@ const spotTypes = [
 ];
 ---
 
-<section class="py-20 lg:py-28">
+<section id="spot-types" class="page-section" aria-labelledby="spot-types-title">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <!-- Section header -->
-    <div class="text-center">
-      <h2
-        class="text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
-        style="color: var(--text-primary); letter-spacing: -0.8px;"
-      >
+    <div class="section-intro section-intro--center">
+      <p class="section-kicker">{strings.spot_types_label}</p>
+      <h2 id="spot-types-title" class="section-title max-w-[14ch]">
         {strings.spot_types_title}
       </h2>
-      <p
-        class="mx-auto mt-3 max-w-xl text-sm font-light sm:text-base"
-        style="color: var(--text-secondary);"
-      >
+      <p class="section-copy max-w-2xl">
         {strings.spot_types_subtitle}
       </p>
     </div>
 
-    <!-- Spot types — flowing inline layout -->
-    <div class="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-5 sm:gap-x-8 md:gap-x-10">
-      {spotTypes.map((spot, i) => (
-        <div class="spot-type-item flex items-center gap-2">
-          <img
-            src={spot.icon}
-            alt=""
-            class="spot-icon h-6 w-6 sm:h-7 sm:w-7"
-            loading="lazy"
-            aria-hidden="true"
-          />
-          <span
-            class="text-xs font-semibold tracking-wide uppercase sm:text-sm"
-            style="color: var(--text-primary);"
-          >
-            {spot.name}
-          </span>
-          {i < spotTypes.length - 1 && (
-            <span
-              class="ml-4 hidden text-xs sm:ml-6 sm:inline-block md:ml-8"
-              style="color: var(--border);"
+    <ul class="mx-auto mt-14 flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-4 sm:gap-x-8" role="list">
+      {spotTypes.map((spot) => (
+        <li>
+          <div class="spot-type-item inline-flex items-center gap-2.5">
+            <img
+              src={spot.icon}
+              alt=""
+              class="spot-icon h-5 w-5 sm:h-6 sm:w-6"
+              loading="lazy"
               aria-hidden="true"
+            />
+            <span
+              class="text-sm font-semibold sm:text-base"
+              style="color: var(--text-primary);"
             >
-              /
+              {spot.name}
             </span>
-          )}
-        </div>
+          </div>
+        </li>
       ))}
-    </div>
+    </ul>
   </div>
 </section>
 
@@ -83,7 +69,8 @@ const spotTypes = [
   .spot-type-item {
     transition: opacity 0.2s ease;
   }
+
   .spot-type-item:hover {
-    opacity: 0.7;
+    opacity: 0.72;
   }
 </style>

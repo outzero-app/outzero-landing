@@ -13,30 +13,50 @@ const altLocale = alternateLocale(locale);
 const homePath = localeHomePath(locale);
 const altPath = alternatePath ?? localeHomePath(altLocale);
 const altLabel = altLocale.toUpperCase();
+const sectionLinks = [
+  { href: `${homePath}#spot-types`, label: strings.nav_spots },
+  { href: `${homePath}#features`, label: strings.nav_features },
+  { href: `${homePath}#about`, label: strings.nav_story },
+];
 ---
 
 <nav
   id="navbar"
   class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  aria-label="Primary"
 >
-  <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-    <!-- Logo -->
-    <a href={homePath} class="flex items-center" aria-label="Outzero home">
-      <img
-        src="/images/outzero_logo_white.svg"
-        alt="Outzero"
-        class="h-6 w-auto sm:h-7 logo-img"
-      />
-    </a>
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-8">
+    <div class="flex min-w-0 items-center gap-8">
+      <!-- Logo -->
+      <a href={homePath} class="flex shrink-0 items-center" aria-label="Outzero home">
+        <img
+          src="/images/outzero_logo_white.svg"
+          alt="Outzero"
+          class="h-6 w-auto sm:h-7 logo-img"
+        />
+      </a>
+
+      <div class="hidden items-center gap-6 md:flex">
+        {sectionLinks.map((link) => (
+          <a
+            href={link.href}
+            class="text-sm font-light tracking-[0.01em] transition-colors hover:text-[var(--text-primary)]"
+            style="color: var(--text-secondary);"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </div>
 
     <!-- Right side: lang switcher + CTA -->
-    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="flex shrink-0 items-center gap-3 sm:gap-4">
       <!-- Language switcher -->
       <a
         href={altPath}
         data-locale-switch
         data-locale={altLocale}
-        class="rounded-[var(--radius-brand)] border border-[var(--border)] px-2.5 py-1 text-xs font-semibold transition-colors hover:border-[var(--text-secondary)]"
+        class="rounded-[var(--radius-brand)] border border-[var(--border)] px-2.5 py-1 text-[0.7rem] font-semibold tracking-[0.08em] transition-colors hover:border-[var(--text-secondary)]"
         style="color: var(--text-secondary);"
         aria-label={`Switch to ${altLocale === "es" ? "Spanish" : "English"}`}
       >
@@ -73,30 +93,33 @@ const altLabel = altLocale.toUpperCase();
   });
 
   if (navbar) {
-    window.addEventListener("scroll", () => {
+    const syncNavbarState = () => {
       if (window.scrollY > 40) {
         navbar.classList.add("navbar-scrolled");
       } else {
         navbar.classList.remove("navbar-scrolled");
       }
-    });
+    };
+
+    syncNavbarState();
+    window.addEventListener("scroll", syncNavbarState, { passive: true });
   }
 </script>
 
 <style>
   .navbar-scrolled {
-    background-color: rgba(0, 0, 0, 0.75);
+    background-color: color-mix(in srgb, var(--background) 78%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(66, 66, 66, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   }
 
-  [data-theme="light"] .navbar-scrolled {
-    background-color: rgba(255, 255, 255, 0.75);
-    border-bottom: 1px solid rgba(66, 66, 66, 0.15);
+  :global([data-theme="light"]) .navbar-scrolled {
+    background-color: color-mix(in srgb, var(--background) 86%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--border) 22%, transparent);
   }
 
-  [data-theme="light"] .logo-img {
+  :global([data-theme="light"]) .logo-img {
     filter: brightness(0);
   }
 </style>

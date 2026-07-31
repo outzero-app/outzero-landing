@@ -10,12 +10,12 @@ const { locale } = Astro.props;
 const strings = t(locale);
 
 const features = [
-  { title: strings.feature_map_title, description: strings.feature_map_desc, icon: "map" },
-  { title: strings.feature_routes_title, description: strings.feature_routes_desc, icon: "route" },
-  { title: strings.feature_media_title, description: strings.feature_media_desc, icon: "media" },
-  { title: strings.feature_community_title, description: strings.feature_community_desc, icon: "community" },
-  { title: strings.feature_multiplatform_title, description: strings.feature_multiplatform_desc, icon: "devices" },
-  { title: strings.feature_plus_title, description: strings.feature_plus_desc, icon: "plus" },
+  { title: strings.feature_map_title, description: strings.feature_map_desc, icon: "map", accent: "var(--tag-green)" },
+  { title: strings.feature_routes_title, description: strings.feature_routes_desc, icon: "route", accent: "var(--tag-green)" },
+  { title: strings.feature_media_title, description: strings.feature_media_desc, icon: "media", accent: "var(--tag-green)" },
+  { title: strings.feature_community_title, description: strings.feature_community_desc, icon: "community", accent: "var(--tag-green)" },
+  { title: strings.feature_multiplatform_title, description: strings.feature_multiplatform_desc, icon: "devices", accent: "var(--tag-green)" },
+  { title: strings.feature_plus_title, description: strings.feature_plus_desc, icon: "plus", accent: "var(--tag-green)" },
 ];
 
 const icons: Record<string, string> = {
@@ -28,42 +28,37 @@ const icons: Record<string, string> = {
 };
 ---
 
-<section id="features" class="py-20 lg:py-28">
+<section id="features" class="page-section" aria-labelledby="features-title">
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <!-- Section header -->
-    <div class="text-center">
-      <span
-        class="inline-block rounded-full px-4 py-1 text-xs font-semibold tracking-wider uppercase"
-        style="background: var(--tag-green); color: var(--tag-green-fg);"
-      >
+    <div class="section-intro section-intro--center">
+      <p class="section-kicker">
         {strings.features_label}
-      </span>
-      <h2
-        class="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl"
-        style="color: var(--text-primary); letter-spacing: -0.8px;"
-      >
+      </p>
+      <h2 id="features-title" class="section-title max-w-[15ch]">
         {strings.features_title}
       </h2>
-      <p
-        class="mx-auto mt-3 max-w-xl text-sm font-light sm:text-base"
-        style="color: var(--text-secondary);"
-      >
+      <p class="section-copy max-w-2xl">
         {strings.features_subtitle}
       </p>
     </div>
 
-    <!-- Features grid -->
-    <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {features.map((feature) => (
-        <div
-          class="feature-card group rounded-[var(--radius-brand)] border border-[var(--border)] p-6 transition-all hover:border-[var(--tag-green)] sm:p-8"
-          style="background: var(--surface);"
+    <div class="mx-auto mt-16 grid max-w-6xl gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((feature, index) => (
+        <article
+          class="feature-item group pt-5 transition-all"
+          style={`border-top: 1px solid color-mix(in srgb, ${feature.accent} 30%, var(--border) 70%); --feature-accent: ${feature.accent};`}
         >
-          <div
-            class="mb-4 inline-flex items-center justify-center rounded-[var(--radius-brand)] p-2.5"
-            style="background: var(--background); color: var(--tag-green);"
-          >
-            <Fragment set:html={icons[feature.icon]} />
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div class="inline-flex items-center justify-center" style={`color: ${feature.accent};`}>
+              <Fragment set:html={icons[feature.icon]} />
+            </div>
+
+            <span
+              class="text-[0.7rem] font-semibold tracking-[0.18em]"
+              style="color: var(--text-secondary);"
+            >
+              {String(index + 1).padStart(2, "0")}
+            </span>
           </div>
           <h3
             class="text-lg font-semibold sm:text-xl"
@@ -77,19 +72,14 @@ const icons: Record<string, string> = {
           >
             {feature.description}
           </p>
-        </div>
+        </article>
       ))}
     </div>
   </div>
 </section>
 
 <style>
-  .feature-card:hover {
-    box-shadow: 0 4px 24px rgba(205, 250, 177, 0.06);
-    transform: translateY(-2px);
-  }
-
-  [data-theme="light"] .feature-card:hover {
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  .feature-item:hover {
+    transform: translateY(-4px);
   }
 </style>

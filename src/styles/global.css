@@ -153,12 +153,102 @@ html {
 }
 
 body {
+  margin: 0;
   font-family: var(--font-sans);
   font-weight: 300;
   color: var(--text-primary);
   background-color: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.page-section {
+  padding-block: clamp(5.5rem, 9vw, 7.5rem);
+}
+
+.section-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-intro--center {
+  align-items: center;
+  text-align: center;
+}
+
+.section-intro--left {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.section-kicker::before {
+  content: "";
+  width: 2.75rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--tag-green) 34%, var(--border) 66%);
+}
+
+.section-kicker--muted::before {
+  background: color-mix(in srgb, var(--border) 100%, transparent);
+}
+
+.section-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.section-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: clamp(0.95rem, 1.3vw, 1.08rem);
+  line-height: 1.7;
+}
+
+section[id] {
+  scroll-margin-top: 7rem;
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--tag-green);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  transform: translateY(-220%);
+  border-radius: var(--radius-brand);
+  background: var(--tag-green);
+  color: var(--tag-green-fg);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 /* Selection highlight using brand green */
@@ -190,4 +280,24 @@ body {
 
 [data-theme="light"] .spot-icon {
   filter: brightness(0);
+}
+
+@media (min-width: 768px) {
+  .section-intro {
+    gap: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

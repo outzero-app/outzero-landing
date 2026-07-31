@@ -14,10 +14,17 @@ export interface Translations {
   meta_title: string;
   meta_description: string;
 
+  // Accessibility
+  skip_to_content: string;
+
   // Navbar
+  nav_spots: string;
+  nav_features: string;
+  nav_story: string;
   nav_open_app: string;
 
   // Hero
+  hero_eyebrow: string;
   hero_headline_1: string;
   hero_headline_2: string;
   hero_subheadline: string;
@@ -25,8 +32,14 @@ export interface Translations {
   hero_learn_more: string;
   hero_download_ios: string;
   hero_download_android: string;
+  hero_web_hint: string;
+  hero_proof_exact_locations: string;
+  hero_proof_real_videos: string;
+  hero_proof_visual_routes: string;
+  hero_proof_platforms: string;
 
   // Spot Types
+  spot_types_label: string;
   spot_types_title: string;
   spot_types_subtitle: string;
   spot_surf: string;
@@ -60,14 +73,18 @@ export interface Translations {
 
   // About
   about_label: string;
+  about_side_note: string;
   about_headline: string;
   about_paragraph_1: string;
   about_paragraph_2: string;
 
   // CTA
+  cta_label: string;
   cta_title: string;
   cta_subtitle: string;
   cta_button: string;
+  cta_secondary: string;
+  cta_helper: string;
 
   // Footer
   footer_open_app: string;
@@ -81,19 +98,32 @@ export const translations: Record<Locale, Translations> = {
   en: {
     meta_title: "Outzero — Discover Amazing Spots Around the World",
     meta_description:
-      "Outzero is a community of adventurers discovering, sharing and saving the best outdoor spots on the planet. Surf, beaches, waterfalls, summits and more.",
+      "Discover surf breaks, hidden beaches, waterfalls, summits and other real outdoor spots with exact locations, route context and community videos on web, iOS and Android.",
+
+    skip_to_content: "Skip to content",
+
+    nav_spots: "Spots",
+    nav_features: "Features",
+    nav_story: "Story",
 
     nav_open_app: "Open App",
 
+    hero_eyebrow: "Real spots, shared by adventurers",
     hero_headline_1: "Discover amazing spots",
     hero_headline_2: "around the world",
     hero_subheadline:
-      "A community of adventurers sharing the best surf breaks, hidden beaches, epic waterfalls, summits and secret spots — with real videos, exact locations and visual routes on the map.",
+      "Discover beaches, surf breaks, waterfalls, summits and hidden places with exact pins, real videos and visual routes shared by adventurers.",
     hero_cta: "Open App",
-    hero_learn_more: "Learn more",
+    hero_learn_more: "See features",
     hero_download_ios: "Download on the App Store",
     hero_download_android: "Get it on Google Play",
+    hero_web_hint: "Open the map on the web in seconds, then keep the trip going on iOS and Android.",
+    hero_proof_exact_locations: "Exact locations",
+    hero_proof_real_videos: "Real videos",
+    hero_proof_visual_routes: "Visual routes",
+    hero_proof_platforms: "Web, iOS and Android",
 
+    spot_types_label: "Spot types",
     spot_types_title: "Every type of adventure",
     spot_types_subtitle:
       "From surfing on deserted beaches to epic mountain summits — explore outdoor spots curated by the community.",
@@ -112,7 +142,7 @@ export const translations: Record<Locale, Translations> = {
     features_label: "Features",
     features_title: "Everything you need to explore",
     features_subtitle:
-      "Built for adventurers, by adventurers. Every feature is designed to help you discover your next destination.",
+      "Everything is built to help you decide faster: what the spot is like, where it is and how to get there.",
     feature_map_title: "Interactive Map",
     feature_map_desc:
       "Explore thousands of spots on an interactive map with filters by type, area-based search, satellite view and spot clustering. Find your next destination visually.",
@@ -133,6 +163,7 @@ export const translations: Record<Locale, Translations> = {
       "Go premium for offline maps, satellite view, advanced filters and an ad-free experience. Support the project from \u20AC1.99/month.",
 
     about_label: "Our story",
+    about_side_note: "Built because the best places are usually the hardest to find.",
     about_headline:
       "We are a community of young, curious travelers with a thirst for adrenaline. We created an app that goes beyond typical travel guides.",
     about_paragraph_1:
@@ -140,10 +171,13 @@ export const translations: Record<Locale, Translations> = {
     about_paragraph_2:
       "We started this project because we knew there were incredible spots that deserved to be discovered, but were difficult to find. Our mission is to change that.",
 
-    cta_title: "Ready for your next adventure?",
+    cta_label: "Open the map",
+    cta_title: "Your next spot is already on the map.",
     cta_subtitle:
-      "OUTZERO is more than an app — it\u2019s a community of adventurers. Join us and be part of something bigger. Together, we can discover, protect and share the best spots on the planet.",
+      "Explore the map on the web right now, or take Outzero with you on iOS and Android for the next trip.",
     cta_button: "Open App",
+    cta_secondary: "See features",
+    cta_helper: "No install needed to start on the web app.",
 
     footer_open_app: "Open App",
     footer_privacy: "Privacy Policy",
@@ -155,19 +189,32 @@ export const translations: Record<Locale, Translations> = {
   es: {
     meta_title: "Outzero — Descubre Spots Incre\u00EDbles por Todo el Mundo",
     meta_description:
-      "Outzero es una comunidad de aventureros que descubren, comparten y guardan los mejores spots de naturaleza del planeta. Surf, playas, cascadas, cumbres y mucho m\u00E1s.",
+      "Descubre surf, playas escondidas, cascadas, cumbres y otros spots reales de naturaleza con ubicaciones exactas, contexto de ruta y v\u00EDdeos de la comunidad en web, iOS y Android.",
+
+    skip_to_content: "Saltar al contenido",
+
+    nav_spots: "Spots",
+    nav_features: "Funciones",
+    nav_story: "Historia",
 
     nav_open_app: "Abrir App",
 
+    hero_eyebrow: "Spots reales, compartidos por aventureros",
     hero_headline_1: "Descubre spots incre\u00EDbles",
     hero_headline_2: "por todo el mundo",
     hero_subheadline:
-      "Una comunidad de aventureros compartiendo los mejores breaks de surf, playas escondidas, cascadas \u00E9picas, cumbres y spots secretos \u2014 con v\u00EDdeos reales, ubicaciones exactas y rutas visuales en el mapa.",
+      "Descubre playas, surf, cascadas, cumbres y rincones escondidos con pines exactos, v\u00EDdeos reales y rutas visuales compartidas por aventureros.",
     hero_cta: "Abrir App",
-    hero_learn_more: "Saber m\u00E1s",
+    hero_learn_more: "Ver funciones",
     hero_download_ios: "Descargar en App Store",
     hero_download_android: "Disponible en Google Play",
+    hero_web_hint: "Abre el mapa en la web en segundos y sigue la aventura en iOS y Android.",
+    hero_proof_exact_locations: "Ubicaciones exactas",
+    hero_proof_real_videos: "V\u00EDdeos reales",
+    hero_proof_visual_routes: "Rutas visuales",
+    hero_proof_platforms: "Web, iOS y Android",
 
+    spot_types_label: "Tipos de spot",
     spot_types_title: "Cada tipo de aventura",
     spot_types_subtitle:
       "Desde surf en playas desiertas hasta cumbres de monta\u00F1a \u00E9picas \u2014 explora spots de naturaleza curados por la comunidad.",
@@ -186,7 +233,7 @@ export const translations: Record<Locale, Translations> = {
     features_label: "Caracter\u00EDsticas",
     features_title: "Todo lo que necesitas para explorar",
     features_subtitle:
-      "Hecho por aventureros, para aventureros. Cada funci\u00F3n est\u00E1 dise\u00F1ada para ayudarte a descubrir tu pr\u00F3ximo destino.",
+      "Todo est\u00E1 pensado para decidir m\u00E1s r\u00E1pido: c\u00F3mo es el spot, d\u00F3nde est\u00E1 y c\u00F3mo llegar.",
     feature_map_title: "Mapa Interactivo",
     feature_map_desc:
       "Explora miles de spots en un mapa interactivo con filtros por tipo, b\u00FAsqueda por zona, vista sat\u00E9lite y agrupaci\u00F3n de spots. Encuentra tu pr\u00F3ximo destino visualmente.",
@@ -207,6 +254,7 @@ export const translations: Record<Locale, Translations> = {
       "Pasa a premium para mapas offline, vista sat\u00E9lite, filtros avanzados y una experiencia sin anuncios. Apoya el proyecto desde 1,99\u00A0\u20AC/mes.",
 
     about_label: "Nuestra historia",
+    about_side_note: "Naci\u00F3 porque los mejores lugares suelen ser los m\u00E1s dif\u00EDciles de encontrar.",
     about_headline:
       "Somos una comunidad de viajeros j\u00F3venes, curiosos y con ganas de adrenalina. Creamos una app que va m\u00E1s all\u00E1 de las gu\u00EDas t\u00EDpicas.",
     about_paragraph_1:
@@ -214,10 +262,13 @@ export const translations: Record<Locale, Translations> = {
     about_paragraph_2:
       "Comenzamos este proyecto porque sab\u00EDamos que hab\u00EDa spots incre\u00EDbles que merec\u00EDan ser descubiertos, pero eran dif\u00EDciles de encontrar. Nuestra misi\u00F3n es cambiar eso.",
 
-    cta_title: "\u00BFPreparado para tu pr\u00F3xima aventura?",
+    cta_label: "Abre el mapa",
+    cta_title: "Tu pr\u00F3ximo spot ya est\u00E1 en el mapa.",
     cta_subtitle:
-      "OUTZERO es m\u00E1s que una app \u2014 es una comunidad de aventureros. \u00DAnete a nosotros y forma parte de algo m\u00E1s grande. Juntos, podemos descubrir, proteger y compartir los mejores spots del planeta.",
+      "Explora el mapa ahora mismo desde la web o ll\u00E9vate Outzero en iOS y Android para tu pr\u00F3xima escapada.",
     cta_button: "Abrir App",
+    cta_secondary: "Ver funciones",
+    cta_helper: "No necesitas instalar nada para empezar en la versi\u00F3n web.",
 
     footer_open_app: "Abrir App",
     footer_privacy: "Pol\u00EDtica de Privacidad",

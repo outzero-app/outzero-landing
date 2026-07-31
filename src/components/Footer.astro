@@ -29,7 +29,7 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
       </a>
 
       <!-- Links -->
-      <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-light" style="color: var(--text-secondary);">
+      <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-light tracking-[0.01em]" style="color: var(--text-secondary);">
         <a
           href="https://web.outzero.app"
           class="transition-colors hover:text-[var(--text-primary)]"
@@ -89,7 +89,7 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
       </div>
     </div>
 
-    <div class="border-t pt-6" style="border-color: var(--border);">
+    <div class="border-t pt-6" style="border-color: color-mix(in srgb, var(--border) 75%, transparent);">
       <p class="text-center text-xs font-light lg:text-left" style="color: var(--text-secondary);">
       {strings.footer_copyright}
       </p>
@@ -98,7 +98,7 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
 </footer>
 
 <style>
-  [data-theme="light"] .footer-logo {
+  :global([data-theme="light"]) .footer-logo {
     filter: brightness(0);
   }
 

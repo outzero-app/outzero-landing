@@ -10,6 +10,12 @@ const { locale } = Astro.props;
 const strings = t(locale);
 const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero.app";
+const heroProofs = [
+  strings.hero_proof_exact_locations,
+  strings.hero_proof_real_videos,
+  strings.hero_proof_visual_routes,
+  strings.hero_proof_platforms,
+];
 ---
 
 <section
@@ -26,14 +32,16 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
 
   <!-- Content -->
   <div class="hero-content relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 text-center lg:px-8">
-    <!-- Logo icon -->
-    <div class="mx-auto mb-8 flex justify-center">
-      <img
-        src="/images/outzero_icon_white.svg"
-        alt=""
-        class="hero-logo h-16 w-auto opacity-90 sm:h-20 hero-icon"
-        aria-hidden="true"
-      />
+    <div class="mx-auto mb-6 flex justify-center">
+      <div class="hero-kicker">
+        <img
+          src="/images/outzero_icon_white.svg"
+          alt=""
+          class="hero-icon h-4 w-auto opacity-80"
+          aria-hidden="true"
+        />
+        <span>{strings.hero_eyebrow}</span>
+      </div>
     </div>
 
     <!-- Headline -->
@@ -120,10 +128,28 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
         </a>
       </div>
     </div>
+
+    <p
+      class="mx-auto mt-4 max-w-2xl text-sm font-light sm:text-base"
+      style="color: var(--text-secondary);"
+    >
+      {strings.hero_web_hint}
+    </p>
+
+    <ul class="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2" role="list">
+      {heroProofs.map((proof) => (
+        <li>
+          <span class="inline-flex items-center gap-2 text-xs font-semibold sm:text-sm" style="color: var(--text-primary);">
+            <span class="h-1.5 w-1.5 rounded-full bg-[var(--tag-green)]" aria-hidden="true"></span>
+            {proof}
+          </span>
+        </li>
+      ))}
+    </ul>
   </div>
 
   <!-- Scroll hint -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
+  <div class="hero-scroll-hint absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       class="h-6 w-6 opacity-40"
@@ -144,15 +170,33 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
     padding-bottom: clamp(4rem, 8vh, 6rem);
   }
 
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .hero-kicker::before {
+    content: "";
+    width: 2.75rem;
+    height: 1px;
+    background: color-mix(in srgb, var(--tag-green) 34%, var(--border) 66%);
+  }
+
   .hero-bg {
     background: radial-gradient(
         ellipse 80% 60% at 50% 120%,
-        rgba(205, 250, 177, 0.08) 0%,
+        color-mix(in srgb, var(--color-brand-green) 10%, transparent) 0%,
         transparent 70%
       ),
       radial-gradient(
         ellipse 60% 50% at 80% 20%,
-        rgba(115, 171, 191, 0.05) 0%,
+        color-mix(in srgb, var(--color-accent-blue) 8%, transparent) 0%,
         transparent 60%
       ),
       var(--background);
@@ -204,25 +248,25 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
     50% { transform: translate(-20px, -40px); }
   }
 
-  [data-theme="light"] .hero-bg {
+  :global([data-theme="light"]) .hero-bg {
     background: radial-gradient(
         ellipse 80% 60% at 50% 120%,
-        rgba(43, 79, 10, 0.06) 0%,
+        color-mix(in srgb, var(--color-brand-green-dark) 9%, transparent) 0%,
         transparent 70%
       ),
       radial-gradient(
         ellipse 60% 50% at 80% 20%,
-        rgba(115, 171, 191, 0.06) 0%,
+        color-mix(in srgb, var(--color-accent-blue) 9%, transparent) 0%,
         transparent 60%
       ),
       var(--background);
   }
 
-  [data-theme="light"] .hero-icon {
+  :global([data-theme="light"]) .hero-icon {
     filter: brightness(0);
   }
 
-  [data-theme="light"] .hero-orb {
+  :global([data-theme="light"]) .hero-orb {
     opacity: 0.08;
   }
 
@@ -251,10 +295,6 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
     .hero-content {
       padding-top: 5.5rem;
       padding-bottom: 3rem;
-    }
-
-    .hero-logo {
-      height: 3.5rem;
     }
 
     .hero-title {
@@ -308,6 +348,10 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
 
     .store-badge {
       height: 2.25rem;
+    }
+
+    .hero-scroll-hint {
+      bottom: 1.25rem;
     }
   }
 </style>
