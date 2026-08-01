@@ -104,15 +104,21 @@ const rows = [
                   const typeLabel = spotTypeLabelSingular(spot.spotType, strings);
                   const gallery = spot.gallery ?? [{ url: spot.coverUrl, fit: "contain" as const }];
 
+                  // Every gallery photo is lazy, including each panel's first.
+                  // The mockup sits well below the fold, so loading those twelve
+                  // eagerly only meant ~1.2MB of phone-demo photos competing
+                  // with the hero during LCP. Chrome begins fetching them around
+                  // 1250px before they scroll into view, long before the reader
+                  // reaches the mockup.
                   return (
                     <div class="feed-panel" data-feed-panel>
                       <div class="feed-media" data-feed-media>
-                        {gallery.map((image, mediaIndex) => (
+                        {gallery.map((image) => (
                           <img
                             src={image.url}
                             alt=""
                             class={`feed-image feed-image--${image.fit}`}
-                            loading={mediaIndex === 0 ? "eager" : "lazy"}
+                            loading="lazy"
                           />
                         ))}
                       </div>
@@ -446,6 +452,29 @@ const rows = [
 
     // Opening a spot is handled by the anchor covering each panel; off-screen
     // panels are clipped by the feed, so only the visible one can be hit.
+
+    // The gallery photos ship as loading="lazy" so they stay out of the hero's
+    // way during LCP, but lazy alone is wrong for a carousel that advances on a
+    // timer: only the panel on screen counts as "near the viewport", so panels
+    // two and three were still blank when their turn came. This pulls all of
+    // them in as the mockup approaches — well before the carousel starts, since
+    // that waits for 20% visibility and this fires 1200px earlier.
+    const preload = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) {
+          return;
+        }
+
+        for (const image of root.querySelectorAll<HTMLImageElement>(".feed-image")) {
+          image.loading = "eager";
+        }
+
+        preload.disconnect();
+      },
+      { rootMargin: "1200px" },
+    );
+
+    preload.observe(root);
 
     // Only runs while on screen and in a foreground tab. A reduced-motion
     // preference must not disable the demo outright — global.css already
