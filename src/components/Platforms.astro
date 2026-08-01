@@ -39,10 +39,10 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
         <p class="platform-desc">{strings.platforms_mobile_desc}</p>
         <div class="platform-badges">
           <a href={appStoreUrl} aria-label={strings.hero_download_ios}>
-            <img src="/images/app_store_badge.png" alt={strings.hero_download_ios} class="platform-badge" loading="lazy" />
+            <img src="/images/app_store_badge.png" alt={strings.hero_download_ios} class="platform-badge" loading="lazy" width="1083" height="324" />
           </a>
           <a href={googlePlayUrl} aria-label={strings.hero_download_android}>
-            <img src="/images/google_play_badge.png" alt={strings.hero_download_android} class="platform-badge" loading="lazy" />
+            <img src="/images/google_play_badge.png" alt={strings.hero_download_android} class="platform-badge" loading="lazy" width="1083" height="329" />
           </a>
         </div>
       </article>
@@ -102,6 +102,9 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
 
   .platform-badge {
     height: 48px;
+    /* See Hero.astro: the width attribute is a presentational hint and would
+       otherwise stretch the badge to its intrinsic 1083px. */
+    width: auto;
     display: block;
     transition: transform var(--duration-base) var(--ease-out);
   }

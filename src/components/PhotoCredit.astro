@@ -88,9 +88,14 @@ const strings = t(locale);
     text-overflow: ellipsis;
   }
 
+  /* 0.74, not the 0.66 this started at: the alpha here multiplies with the
+     0.62 opacity on the link, and at 0.66 the composited result came to
+     3.92:1 against the chip — under the 4.5:1 WCAG AA wants for text this
+     size. 0.74 lands at 4.67:1 and still reads as the quieter half of the
+     credit next to the spot name. */
   .photo-credit-author {
     font-weight: 300;
-    color: rgba(255, 255, 255, 0.66);
+    color: rgba(255, 255, 255, 0.74);
   }
 
   @media (max-width: 520px) {
