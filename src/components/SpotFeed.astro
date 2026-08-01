@@ -31,7 +31,7 @@ const gridPool = landing.rotation.grid;
         <p class="feed-support-copy">{strings.feed_subtitle}</p>
       </div>
 
-      <div class="feed-grid" data-feed-grid style="visibility: hidden;">
+      <div class="feed-grid" data-feed-grid style="opacity:0;transition:opacity 0.4s ease;">
         {feedSpots.map((spot) => (
           <SpotCard spot={spot} locale={locale} />
         ))}
@@ -45,7 +45,7 @@ const gridPool = landing.rotation.grid;
 <noscript>
   <style>
     [data-feed-grid] {
-      visibility: visible !important;
+      opacity: 1 !important;
     }
   </style>
 </noscript>
@@ -95,7 +95,7 @@ const gridPool = landing.rotation.grid;
   }
 
   if (grid) {
-    grid.style.visibility = "visible";
+    grid.style.opacity = "1";
   }
 </script>
 

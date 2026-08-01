@@ -45,7 +45,7 @@ const storyPoolForClient =
 
     {photo && (
       <div class="story-photo-wrap">
-        <img alt="" class="story-photo" data-story-photo loading="lazy" />
+        <img alt="" class="story-photo" data-story-photo loading="lazy" style="opacity:0;transition:opacity 0.5s ease;" />
         <noscript>
           <img src={photo.url} alt="" class="story-photo" loading="lazy" />
         </noscript>
@@ -78,7 +78,11 @@ const storyPoolForClient =
   const picked = randomItem(pool);
 
   if (root && picked) {
-    root.querySelector<HTMLImageElement>("[data-story-photo]")?.setAttribute("src", picked.url);
+    const photo = root.querySelector<HTMLImageElement>("[data-story-photo]");
+    if (photo) {
+      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
+      photo.setAttribute("src", picked.url);
+    }
 
     const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
     if (credit) {

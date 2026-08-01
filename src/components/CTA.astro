@@ -36,7 +36,7 @@ const ctaPoolForClient =
     <div class="cta-panel">
       {photo && (
         <>
-          <img alt="" class="cta-photo" data-cta-photo loading="lazy" />
+          <img alt="" class="cta-photo" data-cta-photo loading="lazy" style="opacity:0;transition:opacity 0.5s ease;" />
           <noscript>
             <img src={photo.url} alt="" class="cta-photo" loading="lazy" />
           </noscript>
@@ -80,7 +80,11 @@ const ctaPoolForClient =
   const picked = randomItem(pool);
 
   if (root && picked) {
-    root.querySelector<HTMLImageElement>("[data-cta-photo]")?.setAttribute("src", picked.url);
+    const photo = root.querySelector<HTMLImageElement>("[data-cta-photo]");
+    if (photo) {
+      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
+      photo.setAttribute("src", picked.url);
+    }
 
     const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
     if (credit) {

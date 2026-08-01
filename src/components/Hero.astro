@@ -49,7 +49,7 @@ const proofs = [
 <header id="hero" class="hero" data-hero-root>
   {backdrop && (
     <>
-      <img alt="" class="hero-photo" data-hero-photo fetchpriority="high" />
+      <img alt="" class="hero-photo" data-hero-photo fetchpriority="high" style="opacity:0;transition:opacity 0.5s ease;" />
       <noscript>
         <img src={backdrop.url} alt="" class="hero-photo" fetchpriority="high" />
       </noscript>
@@ -129,6 +129,7 @@ const proofs = [
   if (root && picked) {
     const photo = root.querySelector<HTMLImageElement>("[data-hero-photo]");
     if (photo) {
+      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
       photo.src = picked.url;
     }
 
