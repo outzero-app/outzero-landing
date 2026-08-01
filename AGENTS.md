@@ -140,10 +140,10 @@ The landing defaults to dark theme (`data-theme="dark"` on `<html>`). To support
   The navbar sheds elements as space runs out: section links move into a toggle menu below 880px,
   the language pill joins them below 440px, and the CTA follows below 360px.
 - **Viewport fit**: `--navbar-height` in `global.css` is the single source for the fixed bar's
-  height — it feeds `scroll-padding-top` (so anchors and scroll-snap land under the navbar) and the
-  hero's top padding. Do **not** also set `scroll-margin-top` on sections; both apply and the target
-  ends up offset twice. Sections carry `scroll-snap-align: start` with `proximity` snapping, so
-  Space/Page Down land on a section boundary without trapping long sections.
+  height — it feeds `scroll-padding-top` (so anchor targets clear the navbar) and the hero's top
+  padding. Do **not** also set `scroll-margin-top` on sections; both apply and the target ends up
+  offset twice. Scroll-snap was tried and removed: it pulls against someone who is just reading,
+  and the sections aren't viewport-height, so it never gave a clean section-per-screen effect.
 - **The hero always fits one screen** (`max-height: 100svh`); its title is sized with
   `clamp(38px, min(7.2vw, 8.6vh), 86px)` so it shrinks on short viewports instead of overflowing.
 - **Accessibility**: Semantic HTML, `alt` attributes, `aria-label` on icon-only links, `aria-hidden` on decorative elements.
