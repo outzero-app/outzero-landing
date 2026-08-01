@@ -427,7 +427,7 @@ export interface LandingSpots {
   /** Spots played inside the phone mockup. */
   miniFeed: FeedSpot[];
   /** Backdrops for the hero, story and CTA sections. */
-  showcase: Record<ShowcaseSlot, string | null>;
+  showcase: Record<ShowcaseSlot, ShowcaseImage | null>;
   /** Small thumbnail for the mockup's account tab. */
   accountAvatar: string | null;
 }
@@ -459,8 +459,8 @@ async function buildLandingSpots(lang: Locale): Promise<LandingSpots> {
   const tiles = await pickTiles(lang, used);
   const grid = await pickGrid(lang, used);
   const miniFeed = await pickMiniFeed(lang, used);
-  const showcase = await resolveShowcaseImages(used);
-  const accountAvatar = await pickAccountThumbnail(used);
+  const showcase = await resolveShowcaseImages(lang, used);
+  const accountAvatar = await pickAccountThumbnail(lang, used);
 
   return { tiles, grid, miniFeed, showcase, accountAvatar };
 }
@@ -600,10 +600,10 @@ function scoreSpot(spot: FeedSpot): number {
  * resolved so the card matches the real app.
  */
 async function pickMiniFeed(lang: Locale, used: Set<string>): Promise<FeedSpot[]> {
-  const limit = 5;
+  const limit = 12;
   const data = await callFunction<PaginatedSpotsResponse>("getVerifiedSpotsPaginated", {
     lang,
-    limit: "120",
+    limit: "250",
   });
 
   const candidates = (data?.items ?? [])
@@ -615,6 +615,8 @@ async function pickMiniFeed(lang: Locale, used: Set<string>): Promise<FeedSpot[]
   const usable: FeedSpot[] = [];
   const seenCountries = new Set<string>();
 
+  // Prefer one spot per country, then top up if the catalogue can't fill the
+  // demo with that many distinct countries.
   for (const spot of ordered) {
     if (seenCountries.has(spot.countryCode)) {
       continue;
@@ -625,6 +627,15 @@ async function pickMiniFeed(lang: Locale, used: Set<string>): Promise<FeedSpot[]
 
     if (usable.length >= limit) {
       break;
+    }
+  }
+
+  for (const spot of ordered) {
+    if (usable.length >= limit) {
+      break;
+    }
+    if (!usable.includes(spot)) {
+      usable.push(spot);
     }
   }
 
@@ -642,8 +653,8 @@ async function pickMiniFeed(lang: Locale, used: Set<string>): Promise<FeedSpot[]
  * A small thumbnail from a random verified spot, used to fill the account
  * avatar in the phone mockup's bottom nav.
  */
-async function pickAccountThumbnail(used: Set<string>): Promise<string | null> {
-  const pool = (await showcasePool()).filter(
+async function pickAccountThumbnail(lang: Locale, used: Set<string>): Promise<string | null> {
+  const pool = (await showcasePool(lang)).filter(
     (spot) => !used.has(spot.id) && spot.media.some((url) => !isVideoUrl(url)),
   );
 
@@ -668,6 +679,14 @@ async function pickAccountThumbnail(used: Set<string>): Promise<string | null> {
 
 export type ShowcaseSlot = "hero" | "story" | "cta";
 
+/** An editorial backdrop plus what's needed to credit the spot it came from. */
+export interface ShowcaseImage {
+  url: string;
+  spotId: string;
+  name: string;
+  authorHandle?: string;
+}
+
 /** Spot types each editorial backdrop draws from, in order of preference. */
 const SHOWCASE_SOURCES: Record<ShowcaseSlot, string[]> = {
   // Lakes and beaches are listed last as extra sources of landscape shots.
@@ -681,15 +700,20 @@ const SHOWCASE_SOURCES: Record<ShowcaseSlot, string[]> = {
  * backdrops, instead of stock imagery.
  */
 async function resolveShowcaseImages(
+  lang: Locale,
   used: Set<string>,
-): Promise<Record<ShowcaseSlot, string | null>> {
-  const result: Record<ShowcaseSlot, string | null> = { hero: null, story: null, cta: null };
+): Promise<Record<ShowcaseSlot, ShowcaseImage | null>> {
+  const result: Record<ShowcaseSlot, ShowcaseImage | null> = {
+    hero: null,
+    story: null,
+    cta: null,
+  };
 
   for (const slot of ["hero", "story", "cta"] as ShowcaseSlot[]) {
-    const picked = await pickShowcaseImage(SHOWCASE_SOURCES[slot], slot, used);
+    const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used);
     result[slot] = picked;
 
-    const info = picked ? await imageInfo(picked) : null;
+    const info = picked ? await imageInfo(picked.url) : null;
     console.info(
       `[spots] ${slot} backdrop: ${
         info ? `${info.width}x${info.height} (${(info.bytes / 1024 / 1024).toFixed(2)}MB)` : "none"
@@ -742,26 +766,34 @@ const SHOWCASE_REQUIREMENTS: Record<ShowcaseSlot, ShowcaseRequirement[]> = {
 /** How many photos we're willing to measure per slot before giving up. */
 const SHOWCASE_MEASURE_BUDGET = 60;
 
-let showcasePoolPromise: Promise<SpotPreview[]> | null = null;
+const showcasePoolPromises = new Map<Locale, Promise<SpotPreview[]>>();
 
 /**
  * A broad pool of verified spots for the editorial backdrops. Ranked
  * per-type queries only surface a dozen spots each, which is far too narrow
  * once the landscape-orientation filter is applied.
+ *
+ * Cached per locale so the credit can name the spot in the reader's language.
+ * The endpoint orders by verification date regardless of `lang`, so both
+ * locales walk the same spots in the same order and pick the same photos.
  */
-function showcasePool(): Promise<SpotPreview[]> {
-  showcasePoolPromise ??= loadShowcasePool();
-  return showcasePoolPromise;
+function showcasePool(lang: Locale): Promise<SpotPreview[]> {
+  let pool = showcasePoolPromises.get(lang);
+  if (!pool) {
+    pool = loadShowcasePool(lang);
+    showcasePoolPromises.set(lang, pool);
+  }
+  return pool;
 }
 
-async function loadShowcasePool(): Promise<SpotPreview[]> {
+async function loadShowcasePool(lang: Locale): Promise<SpotPreview[]> {
   const items: SpotPreview[] = [];
   let cursor: number | null = null;
 
   // Paginated rather than a single page: the endpoint returns newest-first, so
   // one page would only ever draw from the most recently verified spots.
   for (let page = 0; page < 6; page++) {
-    const params: Record<string, string> = { lang: "en", limit: "250" };
+    const params: Record<string, string> = { lang, limit: "250" };
     if (cursor != null) {
       params.startAfterVerifiedAt = String(cursor);
     }
@@ -788,12 +820,13 @@ async function loadShowcasePool(): Promise<SpotPreview[]> {
 }
 
 async function pickShowcaseImage(
+  lang: Locale,
   spotTypes: string[],
   slot: ShowcaseSlot,
   used: Set<string>,
-): Promise<string | null> {
+): Promise<ShowcaseImage | null> {
   const random = rngFor(`showcase:${slot}`);
-  const pool = (await showcasePool()).filter(
+  const pool = (await showcasePool(lang)).filter(
     (spot) => !used.has(spot.id) && spot.media.some((url) => !isVideoUrl(url)),
   );
 
@@ -809,9 +842,24 @@ async function pickShowcaseImage(
     ...weightedShuffle(rest, score, random),
   ]
     // The first image is the spot's cover, the one the app leads with.
-    .map((spot) => ({ id: spot.id, photo: spot.media.find((url) => !isVideoUrl(url)) }))
-    .filter((entry): entry is { id: string; photo: string } => entry.photo != null)
+    .map((spot) => ({ spot, photo: spot.media.find((url) => !isVideoUrl(url)) }))
+    .filter((entry): entry is { spot: SpotPreview; photo: string } => entry.photo != null)
     .slice(0, SHOWCASE_MEASURE_BUDGET);
+
+  const credited = async (entry: {
+    spot: SpotPreview;
+    photo: string;
+  }): Promise<ShowcaseImage> => {
+    used.add(entry.spot.id);
+    const author = entry.spot.createdBy ? await fetchAuthor(entry.spot.createdBy) : null;
+
+    return {
+      url: entry.photo,
+      spotId: entry.spot.id,
+      name: entry.spot.translation.name,
+      authorHandle: author?.handle ?? undefined,
+    };
+  };
 
   // The original upload is the highest resolution available — the `_xlarge`
   // variant caps at 1280px, which visibly softens a full-bleed backdrop.
@@ -830,20 +878,13 @@ async function pickShowcaseImage(
         (requirement.maxBytes == null || info.bytes <= requirement.maxBytes);
 
       if (fits) {
-        used.add(candidate.id);
-        return candidate.photo;
+        return credited(candidate);
       }
     }
   }
 
   // Nothing measured up — fall back to whatever the best candidate offers.
-  const fallback = candidates[0];
-  if (fallback) {
-    used.add(fallback.id);
-    return fallback.photo;
-  }
-
-  return null;
+  return candidates[0] ? credited(candidates[0]) : null;
 }
 
 /** The app's in-card carousel shows at most four media items. */

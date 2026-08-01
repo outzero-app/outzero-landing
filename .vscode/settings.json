@@ -1,0 +1,9 @@
+{
+  // Tailwind v4 replaces tailwind.config.js with in-CSS directives (@theme,
+  // @apply, ...). VS Code's built-in CSS linter doesn't know them and flags
+  // "Unknown at rule". The build is unaffected, so silence the rule rather
+  // than avoid the directives.
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}

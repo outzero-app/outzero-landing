@@ -5,6 +5,7 @@
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
 import { fetchLandingSpots } from "../lib/spots";
+import PhotoCredit from "./PhotoCredit.astro";
 
 interface Props {
   locale: Locale;
@@ -18,8 +19,9 @@ const photo = (await fetchLandingSpots(locale)).showcase.cta;
 <section class="page-section" aria-labelledby="cta-title">
   <div class="oz-container">
     <div class="cta-panel">
-      {photo && <img src={photo} alt="" class="cta-photo" loading="lazy" />}
+      {photo && <img src={photo.url} alt="" class="cta-photo" loading="lazy" />}
       <div class="cta-overlay" aria-hidden="true"></div>
+      {photo && <PhotoCredit image={photo} locale={locale} />}
 
       <div class="cta-content">
         <h2 id="cta-title" class="cta-title">{strings.cta_title}</h2>

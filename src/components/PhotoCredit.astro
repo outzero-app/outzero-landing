@@ -1,0 +1,98 @@
+---
+/**
+ * Credits the real spot an editorial photo came from, and links to it.
+ *
+ * Deliberately understated: it sits over the photo as small, low-contrast
+ * text that only brightens on hover, so it reads as a caption rather than
+ * competing with the section's own content.
+ */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+import { spotUrl, type ShowcaseImage } from "../lib/spots";
+
+interface Props {
+  image: ShowcaseImage;
+  locale: Locale;
+  /** Corner to pin it to; the three backdrops are composed differently. */
+  placement?: "bottom-right" | "bottom-left";
+}
+
+const { image, locale, placement = "bottom-right" } = Astro.props;
+const strings = t(locale);
+---
+
+<a
+  class={`photo-credit photo-credit--${placement}`}
+  href={spotUrl(image.spotId)}
+  target="_blank"
+  rel="noopener"
+>
+  <span class="photo-credit-label">{strings.photo_credit_prefix}</span>
+  <span class="photo-credit-name">{image.name}</span>
+  {image.authorHandle && <span class="photo-credit-author">{image.authorHandle}</span>}
+</a>
+
+<style>
+  .photo-credit {
+    position: absolute;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: min(90%, 460px);
+    padding: 5px 9px;
+    border-radius: var(--radius-brand);
+    background: rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-size: 11px;
+    line-height: 1.3;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.62;
+    transition: opacity var(--duration-base) ease, background-color var(--duration-base) ease;
+  }
+
+  .photo-credit:hover,
+  .photo-credit:focus-visible {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .photo-credit--bottom-right {
+    right: clamp(12px, 2vw, 20px);
+    bottom: clamp(12px, 2vw, 18px);
+  }
+
+  .photo-credit--bottom-left {
+    left: clamp(12px, 2vw, 20px);
+    bottom: clamp(12px, 2vw, 18px);
+  }
+
+  .photo-credit-label {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-green);
+  }
+
+  .photo-credit-name {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .photo-credit-author {
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.66);
+  }
+
+  @media (max-width: 520px) {
+    .photo-credit-author {
+      display: none;
+    }
+  }
+</style>

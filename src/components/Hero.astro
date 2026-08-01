@@ -6,14 +6,14 @@
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
 import { fetchLandingSpots } from "../lib/spots";
+import PhotoCredit from "./PhotoCredit.astro";
 
 interface Props {
   locale: Locale;
-  glow?: boolean;
   showBadges?: boolean;
 }
 
-const { locale, glow = true, showBadges = true } = Astro.props;
+const { locale, showBadges = true } = Astro.props;
 const strings = t(locale);
 
 const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
@@ -32,10 +32,9 @@ const proofs = [
 ---
 
 <header id="hero" class="hero">
-  {backdrop && <img src={backdrop} alt="" class="hero-photo" fetchpriority="high" />}
+  {backdrop && <img src={backdrop.url} alt="" class="hero-photo" fetchpriority="high" />}
   <div class="hero-tint" aria-hidden="true"></div>
   <div class="hero-fade" aria-hidden="true"></div>
-  {glow && <div class="hero-glow" aria-hidden="true"></div>}
 
   <div class="hero-inner">
     <div class="hero-content">
@@ -79,12 +78,18 @@ const proofs = [
       </div>
     </div>
   </div>
+
+  {backdrop && <PhotoCredit image={backdrop} locale={locale} />}
 </header>
 
 <style>
+  /* Exactly one screen tall: the hero is the section that must always be
+     readable without scrolling, so its content is sized to fit rather than
+     allowed to push the section taller. */
   .hero {
     position: relative;
     min-height: 100svh;
+    max-height: 100svh;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -116,18 +121,9 @@ const proofs = [
     );
   }
 
-  .hero-glow {
-    position: absolute;
-    bottom: -140px;
-    left: -80px;
-    width: 520px;
-    height: 520px;
-    border-radius: 50%;
-    background: var(--color-brand-green);
-    filter: blur(150px);
-    opacity: 0.16;
-    pointer-events: none;
-  }
+  /* The design's green glow orb is deliberately not used: the backdrop is a
+     different real photo on every build, and the tint clashed with some of
+     them. The gradients above already carry the brand feel. */
 
   .hero-inner {
     position: relative;
@@ -135,7 +131,10 @@ const proofs = [
     max-width: 1200px;
     width: 100%;
     margin: 0 auto;
-    padding: 120px clamp(20px, 5vw, 48px) 80px;
+    /* Clears the fixed navbar and then some, so the eyebrow never crowds it. */
+    padding-block: calc(var(--navbar-height) + clamp(28px, 5.5vh, 60px))
+      clamp(44px, 7vh, 78px);
+    padding-inline: clamp(20px, 5vw, 48px);
   }
 
   .hero-content {
@@ -173,12 +172,14 @@ const proofs = [
     opacity: 0.8;
   }
 
+  /* Sized by whichever runs out first, width or height, so the hero keeps its
+     breathing room on short screens instead of pressing against the edges. */
   .hero-title {
     margin: 0;
-    font-size: clamp(44px, 7.2vw, 86px);
+    font-size: clamp(38px, min(7.2vw, 8.6vh), 86px);
     font-weight: 600;
-    line-height: 1;
-    letter-spacing: -2.5px;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
     color: var(--color-primary-white);
     text-wrap: balance;
   }
@@ -256,6 +257,52 @@ const proofs = [
   @media (max-width: 640px) {
     .store-badge {
       height: 42px;
+    }
+  }
+
+  /* Short viewports (most phones in landscape, small laptops): tighten the
+     vertical rhythm so the whole hero still fits on one screen. */
+  /* The title clamp already scales with height; these only tighten the gaps. */
+  @media (max-height: 760px) {
+    .hero-eyebrow {
+      margin-bottom: 14px;
+    }
+
+    .hero-sub {
+      margin-top: 16px;
+      font-size: clamp(14px, 1.4vw, 17px);
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+    }
+
+    .hero-badges {
+      margin-top: 14px;
+    }
+
+    .store-badge {
+      height: 40px;
+    }
+
+    .hero-hint {
+      margin-top: 14px;
+    }
+
+    .hero-proofs {
+      margin-top: 16px;
+      gap: 8px 18px;
+    }
+  }
+
+  @media (max-height: 620px) {
+    .hero-hint {
+      display: none;
+    }
+
+    .store-badge {
+      height: 34px;
     }
   }
 </style>

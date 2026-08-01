@@ -104,11 +104,6 @@ export interface Translations {
   platforms_mobile_title: string;
   platforms_mobile_desc: string;
 
-  // Mini-feed end card (demo limit reached)
-  mini_feed_end_title: string;
-  mini_feed_end_body: string;
-  mini_feed_end_cta: string;
-
   // Features
   features_label: string;
   features_title: string;
@@ -139,6 +134,9 @@ export interface Translations {
   cta_subtitle: string;
   cta_button: string;
   cta_helper: string;
+
+  /** Credit under a photo, e.g. "Spot: Peña Oroel". */
+  photo_credit_prefix: string;
 
   // Footer
   footer_open_app: string;
@@ -245,9 +243,6 @@ export const translations: Record<Locale, Translations> = {
     platforms_mobile_desc:
       "Download the native app to take your spots with you, with offline maps and on-the-ground navigation thanks to Outzero+.",
 
-    mini_feed_end_title: "Keep exploring",
-    mini_feed_end_body: "This is just a taste of the feed. Open the web app or download Outzero to see thousands more real spots.",
-    mini_feed_end_cta: "Open App",
 
     features_label: "All in one app",
     features_title: "Everything you need to explore",
@@ -287,6 +282,8 @@ export const translations: Record<Locale, Translations> = {
       "Your next spot is already on the map. Open it right now on the web or take it with you on iOS and Android.",
     cta_button: "Open the map →",
     cta_helper: "No install needed to start on the web.",
+
+    photo_credit_prefix: "Spot",
 
     footer_open_app: "Open App",
     footer_privacy: "Privacy Policy",
@@ -391,9 +388,6 @@ export const translations: Record<Locale, Translations> = {
     platforms_mobile_desc:
       "Descarga la app nativa para llevarte los spots contigo, con mapas offline y navegación sobre el terreno gracias a Outzero+.",
 
-    mini_feed_end_title: "Sigue explorando",
-    mini_feed_end_body: "Esto es solo una prueba del feed. Abre la web app o desc\u00E1rgate Outzero para ver miles de spots reales m\u00E1s.",
-    mini_feed_end_cta: "Abrir App",
 
     features_label: "Todo en una app",
     features_title: "Todo lo que necesitas para explorar",
@@ -433,6 +427,8 @@ export const translations: Record<Locale, Translations> = {
       "Tu pr\u00F3ximo spot ya est\u00E1 en el mapa. \u00C1brelo ahora mismo en la web o ll\u00E9vatelo en iOS y Android.",
     cta_button: "Abrir el mapa \u2192",
     cta_helper: "No necesitas instalar nada para empezar en la web.",
+
+    photo_credit_prefix: "Spot",
 
     footer_open_app: "Abrir App",
     footer_privacy: "Pol\u00EDtica de Privacidad",

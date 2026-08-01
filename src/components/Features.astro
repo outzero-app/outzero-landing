@@ -27,7 +27,7 @@ const features = [
     <div class="section-intro section-intro--center">
       <p class="section-kicker section-kicker--both">{strings.features_label}</p>
       <h2 id="features-title" class="section-title max-w-[16ch]">{strings.features_title}</h2>
-      <p class="section-copy max-w-[600px]">{strings.features_subtitle}</p>
+      <p class="section-copy max-w-150">{strings.features_subtitle}</p>
     </div>
 
     <div class="features-grid">
@@ -57,10 +57,9 @@ const features = [
 
 <style>
   .features-section {
-    padding-block: clamp(72px, 10vw, 120px);
+    padding-block: var(--section-padding);
     background: var(--splash);
     border-block: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-    scroll-margin-top: 80px;
   }
 
   .features-grid {

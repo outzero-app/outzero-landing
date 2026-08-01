@@ -182,6 +182,22 @@
  * --------------------------------------------------------------------------*/
 html {
   scroll-behavior: smooth;
+  /* Page Down / Space land on a section boundary instead of mid-content.
+   * `proximity` (not `mandatory`) so sections taller than the viewport can
+   * still be scrolled through freely. */
+  scroll-snap-type: y proximity;
+  scroll-padding-top: var(--navbar-height);
+}
+
+:root {
+  /* Measured height of the fixed navbar, plus a little breathing room. */
+  --navbar-height: 76px;
+}
+
+header,
+section,
+footer {
+  scroll-snap-align: start;
 }
 
 body {
@@ -194,8 +210,21 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Shared by every section (including those with their own background) so the
+ * vertical rhythm can be tightened in one place. Sections are sized to fit a
+ * standard viewport where the content allows it. */
+:root {
+  --section-padding: clamp(64px, 8vw, 104px);
+}
+
+@media (max-height: 820px) {
+  :root {
+    --section-padding: clamp(44px, 6vw, 72px);
+  }
+}
+
 .page-section {
-  padding-block: clamp(72px, 10vw, 120px);
+  padding-block: var(--section-padding);
 }
 
 /* Shared content column: 1200px with the design's fluid gutter. */
@@ -270,9 +299,9 @@ body {
   line-height: 1.6;
 }
 
-section[id] {
-  scroll-margin-top: 7rem;
-}
+/* No scroll-margin on the sections themselves: `scroll-padding-top` on the
+ * scroll container already reserves the navbar for anchors and snap points
+ * alike, and setting both would offset targets twice. */
 
 a:focus-visible,
 button:focus-visible,

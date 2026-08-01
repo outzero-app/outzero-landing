@@ -5,6 +5,7 @@
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
 import { fetchLandingSpots } from "../lib/spots";
+import PhotoCredit from "./PhotoCredit.astro";
 
 interface Props {
   locale: Locale;
@@ -28,8 +29,9 @@ const photo = (await fetchLandingSpots(locale)).showcase.story;
     </div>
 
     {photo && (
-      <div>
-        <img src={photo} alt="" class="story-photo" loading="lazy" />
+      <div class="story-photo-wrap">
+        <img src={photo.url} alt="" class="story-photo" loading="lazy" />
+        <PhotoCredit image={photo} locale={locale} placement="bottom-left" />
       </div>
     )}
   </div>
@@ -37,10 +39,9 @@ const photo = (await fetchLandingSpots(locale)).showcase.story;
 
 <style>
   .story-section {
-    padding-block: clamp(72px, 10vw, 120px);
+    padding-block: var(--section-padding);
     background: var(--splash);
     border-block: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-    scroll-margin-top: 80px;
   }
 
   .oz-story-grid {
@@ -89,6 +90,11 @@ const photo = (await fetchLandingSpots(locale)).showcase.story;
   .story-copy :global(strong) {
     color: var(--text-primary);
     font-weight: 600;
+  }
+
+  .story-photo-wrap {
+    position: relative;
+    display: flex;
   }
 
   .story-photo {

@@ -6,7 +6,13 @@
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
-import { countryDisplayName, fetchLandingSpots, spotUrl, TILE_SPOT_TYPES } from "../lib/spots";
+import {
+  countryDisplayName,
+  fetchLandingSpots,
+  spotTypeLabelSingular,
+  spotUrl,
+  TILE_SPOT_TYPES,
+} from "../lib/spots";
 
 interface Props {
   locale: Locale;
@@ -25,7 +31,7 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
       <h2 id="spot-types-title" class="section-title max-w-[16ch]">
         {strings.spot_types_title}
       </h2>
-      <p class="section-copy max-w-[640px]">
+      <p class="section-copy max-w-160">
         {strings.spot_types_subtitle}
       </p>
     </div>
@@ -62,7 +68,8 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
                   <span class="back-country">{countryDisplayName(spot.countryCode, locale)}</span>
                   <div class="back-info">
                     <span class="back-title">{spot.translation.name}</span>
-                    <span class="back-type">{label}</span>
+                    {/* Singular: the tag describes this one spot, not the category. */}
+                    <span class="back-type">{spotTypeLabelSingular(spot.spotType, strings)}</span>
                   </div>
                   {/* A real link rather than window.open, which pop-up blockers
                       swallow. Inert until the tile is flipped. */}
@@ -85,51 +92,72 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
 </section>
 
 <script>
-  // Only one tile is ever revealed, and it flips back on its own so the grid
-  // returns to a clean state.
-  const AUTO_CLOSE_MS = 5000;
+  // Pointer devices reveal a tile on hover, handled entirely in CSS. This
+  // script is the touch equivalent: tap to reveal, tap again to open. At most
+  // three tiles stay revealed, and each flips back on its own.
+  const AUTO_CLOSE_MS = 3000;
+  const MAX_OPEN = 3;
 
-  let openTile: HTMLElement | null = null;
-  let closeTimer: ReturnType<typeof setTimeout> | null = null;
+  const open: HTMLElement[] = [];
+  const timers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 
-  function close(tile: HTMLElement | null) {
-    if (!tile) {
-      return;
-    }
-
+  function close(tile: HTMLElement) {
     tile.classList.remove("is-flipped");
     tile.setAttribute("aria-pressed", "false");
     tile.querySelector<HTMLAnchorElement>(".back-link")?.setAttribute("tabindex", "-1");
+
+    const timer = timers.get(tile);
+    if (timer != null) {
+      clearTimeout(timer);
+      timers.delete(tile);
+    }
+
+    const index = open.indexOf(tile);
+    if (index >= 0) {
+      open.splice(index, 1);
+    }
   }
 
-  // First activation flips the tile; from then on the anchor covering the back
-  // face handles opening the spot, so no pop-up blocker can get in the way.
+  // First tap flips the tile; from then on the anchor covering the back face
+  // handles opening the spot, so no pop-up blocker can get in the way.
   function flip(tile: HTMLElement) {
     if (tile.dataset.flippable !== "true" || tile.classList.contains("is-flipped")) {
       return;
     }
 
-    if (closeTimer != null) {
-      clearTimeout(closeTimer);
+    // Oldest one out once the third is already showing.
+    while (open.length >= MAX_OPEN) {
+      close(open[0]);
     }
-
-    close(openTile);
 
     tile.classList.add("is-flipped");
     tile.setAttribute("aria-pressed", "true");
     tile.querySelector<HTMLAnchorElement>(".back-link")?.removeAttribute("tabindex");
-    openTile = tile;
+    open.push(tile);
 
-    closeTimer = setTimeout(() => {
-      close(tile);
-      if (openTile === tile) {
-        openTile = null;
-      }
-    }, AUTO_CLOSE_MS);
+    timers.set(
+      tile,
+      setTimeout(() => close(tile), AUTO_CLOSE_MS),
+    );
   }
 
+  const hoverCapable = window.matchMedia("(hover: hover)").matches;
+
   document.querySelectorAll<HTMLElement>("[data-flip-tile]").forEach((tile) => {
+    if (hoverCapable) {
+      // The link is the interactive element here, not the tile: make it
+      // reachable so focus reveals the card for keyboard users too.
+      if (tile.dataset.flippable === "true") {
+        tile.querySelector<HTMLAnchorElement>(".back-link")?.removeAttribute("tabindex");
+        tile.removeAttribute("tabindex");
+        tile.removeAttribute("role");
+        tile.removeAttribute("aria-pressed");
+      }
+      return;
+    }
+
     tile.addEventListener("click", () => flip(tile));
+
     tile.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         // Once flipped, Enter should follow the link instead of re-flipping.
@@ -184,11 +212,11 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
     transition: transform 0.25s var(--ease-out);
   }
 
-  .flip-tile[role="button"] {
+  .flip-tile[data-flippable="true"] {
     cursor: pointer;
   }
 
-  .flip-tile[role="button"]:hover {
+  .flip-tile[data-flippable="true"]:hover {
     transform: translateY(-4px);
   }
 
@@ -201,6 +229,29 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
 
   .flip-tile.is-flipped .flip-inner {
     transform: rotateY(180deg);
+  }
+
+  /* With a mouse the reveal follows the pointer; touch devices fall back to the
+     tap handling in the script. Focus is included so keyboards get it too. */
+  /* `:has(:focus-visible)` rather than `:focus-within`: after clicking through
+     to a spot the link keeps DOM focus, and focus-within would leave the tile
+     stuck open when you come back to the tab. */
+  @media (hover: hover) {
+    .flip-tile[data-flippable="true"]:hover .flip-inner,
+    .flip-tile[data-flippable="true"]:has(.back-link:focus-visible) .flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-tile[data-flippable="true"]:hover .flip-front,
+    .flip-tile[data-flippable="true"]:has(.back-link:focus-visible) .flip-front {
+      opacity: 0;
+    }
+
+    .flip-tile[data-flippable="true"]:hover .flip-back,
+    .flip-tile[data-flippable="true"]:has(.back-link:focus-visible) .flip-back {
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
   .flip-face {
@@ -228,7 +279,7 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
     transition: background var(--duration-base), opacity 0.3s linear;
   }
 
-  .flip-tile[role="button"]:hover .flip-front {
+  .flip-tile[data-flippable="true"]:hover .flip-front {
     background: color-mix(in srgb, var(--surface) 80%, var(--color-brand-green));
   }
 

@@ -51,7 +51,7 @@ const sectionLinks = [
         <span class={locale === "en" ? "lang-active" : "lang-idle"}>EN</span>
       </a>
 
-      <a href="https://web.outzero.app" class="btn btn-primary btn-sm">{strings.nav_open_app}</a>
+      <a href="https://web.outzero.app" class="btn btn-primary btn-sm nav-cta">{strings.nav_open_app}</a>
 
       <button
         type="button"
@@ -71,6 +71,12 @@ const sectionLinks = [
     {sectionLinks.map((link) => (
       <a href={link.href} class="nav-mobile-link">{link.label}</a>
     ))}
+    <a href="https://web.outzero.app" class="btn btn-primary nav-mobile-cta">{strings.nav_open_app}</a>
+    <a href={altPath} class="lang-switch lang-switch--mobile">
+      <span class={locale === "es" ? "lang-active" : "lang-idle"}>ES</span>
+      <span class="lang-sep" aria-hidden="true">/</span>
+      <span class={locale === "en" ? "lang-active" : "lang-idle"}>EN</span>
+    </a>
   </div>
 </nav>
 
@@ -248,6 +254,11 @@ const sectionLinks = [
     color: var(--text-primary);
   }
 
+  .lang-switch--mobile {
+    align-self: flex-start;
+    margin-top: 10px;
+  }
+
   @media (max-width: 880px) {
     .nav-links {
       display: none;
@@ -255,6 +266,56 @@ const sectionLinks = [
 
     .nav-toggle {
       display: flex;
+    }
+  }
+
+  /* Below ~440px the wordmark, the language pill, the CTA and the toggle no
+     longer fit on one line, so the language pill moves into the menu. */
+  @media (max-width: 440px) {
+    .nav-inner {
+      padding-inline: 16px;
+      gap: 12px;
+    }
+
+    .nav-logo {
+      height: 18px;
+    }
+
+    .nav-right > .lang-switch {
+      display: none;
+    }
+
+    .nav-right {
+      gap: 10px;
+    }
+  }
+
+  /* Very narrow screens: only the wordmark and the toggle stay in the bar; the
+     CTA joins the language pill inside the menu. */
+  @media (max-width: 360px) {
+    .nav-cta {
+      display: none;
+    }
+
+    .nav-inner {
+      padding-inline: 14px;
+    }
+  }
+
+  .nav-mobile-cta {
+    align-self: flex-start;
+    margin-top: 12px;
+  }
+
+  @media (min-width: 441px) {
+    .lang-switch--mobile {
+      display: none;
+    }
+  }
+
+  @media (min-width: 361px) {
+    .nav-mobile-cta {
+      display: none;
     }
   }
 

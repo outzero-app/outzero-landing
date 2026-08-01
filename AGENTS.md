@@ -122,8 +122,30 @@ The landing defaults to dark theme (`data-theme="dark"` on `<html>`). To support
 
 - **Components**: One component per `.astro` file in `src/components/`
 - **No frameworks**: Pure Astro components (zero JS shipped by default)
-- **Minimal JS**: Only for scroll-based effects (navbar backdrop). Inline `<script>` tags.
-- **Responsive**: Mobile-first. Breakpoints: `sm:` (640), `md:` (768), `lg:` (1024), `xl:` (1280)
+- **Minimal JS**: Inline `<script>` tags, no framework. Two components carry real behaviour:
+  - `SpotTypes.astro` — pointer devices reveal a category's spot **on hover** (pure CSS); touch
+    devices tap to reveal, keeping at most three open and flipping each back after 3s. Reveal state
+    uses `:has(.back-link:focus-visible)`, not `:focus-within`, or a tile stays open after you
+    return from the spot's tab.
+  - `AppPreview.astro` — the phone feed plays itself at irregular intervals, advancing through a
+    spot's photos and then down to the next, with a clone of the first panel parked at the end so
+    the wrap is a seamless downward scroll rather than a rewind. It also fakes occasional likes,
+    which reset on each pass.
+- **Never gate content behind `prefers-reduced-motion`.** `global.css` already neutralises
+  transition durations; a script that refuses to run leaves the section looking broken for anyone
+  with Windows' "reduce animations" on (which Edge and Chrome honour and Firefox ignores).
+- **Use real `<a>` elements for outbound clicks**, not `window.open` — pop-up blockers swallow the
+  latter silently, and links also give middle-click and "open in new tab".
+- **Responsive**: Mobile-first. Breakpoints: `sm:` (640), `md:` (768), `lg:` (1024), `xl:` (1280).
+  The navbar sheds elements as space runs out: section links move into a toggle menu below 880px,
+  the language pill joins them below 440px, and the CTA follows below 360px.
+- **Viewport fit**: `--navbar-height` in `global.css` is the single source for the fixed bar's
+  height — it feeds `scroll-padding-top` (so anchors and scroll-snap land under the navbar) and the
+  hero's top padding. Do **not** also set `scroll-margin-top` on sections; both apply and the target
+  ends up offset twice. Sections carry `scroll-snap-align: start` with `proximity` snapping, so
+  Space/Page Down land on a section boundary without trapping long sections.
+- **The hero always fits one screen** (`max-height: 100svh`); its title is sized with
+  `clamp(38px, min(7.2vw, 8.6vh), 86px)` so it shrinks on short viewports instead of overflowing.
 - **Accessibility**: Semantic HTML, `alt` attributes, `aria-label` on icon-only links, `aria-hidden` on decorative elements.
 - **Images**: Use `loading="lazy"` for below-the-fold images.
 
@@ -163,6 +185,15 @@ spots. `astro dev` instead re-draws on every render, which makes previewing vari
 **absent** on older documents, not zero — that's why they're optional in `SpotPreview`. Always
 coalesce them; a single `NaN` reaching a sort comparator makes every comparison false and silently
 leaves the list unsorted.
+
+**A spot never appears twice on the page.** `fetchLandingSpots()` allocates every section in one
+pass, threading a shared `used` set through the pickers from most constrained to least (category
+tiles → feed grid → phone demo → editorial backdrops → account avatar). Components read from that
+one result rather than fetching their own spots.
+
+The three editorial photos are credited with `PhotoCredit.astro`, which links back to the spot, so
+`ShowcaseImage` carries the spot id, its localized name and the author handle — that's why the
+showcase pool is cached per locale.
 
 Rules when touching this layer:
 

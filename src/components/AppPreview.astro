@@ -117,6 +117,9 @@ const rows = [
                         ))}
                       </div>
                       <div class="feed-scrim" aria-hidden="true"></div>
+                      <span class="like-burst" aria-hidden="true">
+                        <img src="/icons/ui/like_active.svg" alt="" />
+                      </span>
 
                       <div class="mini-overlay">
                         {typeDef && (
@@ -171,9 +174,14 @@ const rows = [
                             <img src="/icons/navigation/eye.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
                             <span class="mini-action-count">{formatCount(spot.viewCount)}</span>
                           </span>
-                          <span class="mini-action">
-                            <img src="/icons/ui/like.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
-                            <span class="mini-action-count">{formatCount(spot.likesCount)}</span>
+                          <span class="mini-action mini-action--like">
+                            <span class="like-icons">
+                              <img src="/icons/ui/like.svg" alt="" class="spot-icon mini-action-icon like-off" aria-hidden="true" />
+                              <img src="/icons/ui/like_active.svg" alt="" class="mini-action-icon like-on" aria-hidden="true" />
+                            </span>
+                            <span class="mini-action-count" data-like-count data-base={spot.likesCount ?? 0}>
+                              {formatCount(spot.likesCount)}
+                            </span>
                           </span>
                           <span class="mini-action">
                             <img src="/icons/ui/send.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
@@ -205,20 +213,6 @@ const rows = [
                   );
                 })}
 
-                <div class="feed-panel feed-panel--end" data-feed-panel>
-                  <div class="mini-end-inner">
-                    <h4 class="mini-end-title">{strings.mini_feed_end_title}</h4>
-                    <p class="mini-end-body">{strings.mini_feed_end_body}</p>
-                    <span class="mini-end-cta">{strings.mini_feed_end_cta} →</span>
-                  </div>
-                  <a
-                    class="panel-link"
-                    href="https://web.outzero.app"
-                    target="_blank"
-                    rel="noopener"
-                    aria-label={strings.mini_feed_end_cta}
-                  ></a>
-                </div>
               </div>
             </div>
 
@@ -262,6 +256,19 @@ const rows = [
   const DWELL_MAX_MS = 2500;
   /** Odds of moving on to the next spot instead of the next photo. */
   const SKIP_TO_NEXT_SPOT_CHANCE = 0.28;
+  /** Odds of the demo "user" liking any given spot. */
+  const LIKE_CHANCE = 0.45;
+
+  /** Mirrors formatCount() in lib/spots.ts so the counter stays consistent. */
+  function formatCount(value: number): string {
+    if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    if (value >= 1_000) {
+      return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+    }
+    return String(value);
+  }
 
   function setupMiniFeed(root: HTMLElement) {
     const column = root.querySelector<HTMLElement>("[data-feed-column]");
@@ -274,9 +281,74 @@ const rows = [
     const mediaCountOf = (panel: HTMLElement) =>
       Math.max(panel.querySelectorAll(".feed-image").length, 1);
 
+    // Seamless wrap: a copy of the first spot is parked after the last one, so
+    // the feed keeps scrolling downwards instead of rewinding to the top.
+    const loopClone = panels[0].cloneNode(true) as HTMLElement;
+    loopClone.removeAttribute("data-feed-panel");
+    loopClone.setAttribute("aria-hidden", "true");
+    loopClone
+      .querySelector<HTMLElement>("[data-feed-media]")
+      ?.style.setProperty("transform", "translateX(0%)");
+    loopClone.querySelectorAll<HTMLElement>("[data-feed-dots] .mini-dot").forEach((dot, i) => {
+      dot.classList.toggle("is-active", i === 0);
+    });
+    column.appendChild(loopClone);
+
     let panelIndex = 0;
     let mediaIndex = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let likeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /**
+     * Which photo of each spot the demo "user" likes, or -1 for the spots they
+     * scroll past. Deciding up front keeps likes off the first photo every
+     * time, and a spot is never liked twice.
+     */
+    const likeOnMedia = new Map<number, number>();
+
+    const planLike = (index: number) => {
+      if (likeOnMedia.has(index)) {
+        return;
+      }
+
+      likeOnMedia.set(
+        index,
+        Math.random() < LIKE_CHANCE ? Math.floor(Math.random() * mediaCountOf(panels[index])) : -1,
+      );
+    };
+
+    const applyLike = (panel: HTMLElement) => {
+      if (panel.classList.contains("is-liked")) {
+        return;
+      }
+
+      panel.classList.add("is-liked");
+
+      const count = panel.querySelector<HTMLElement>("[data-like-count]");
+      if (count) {
+        count.textContent = formatCount(Number(count.dataset.base ?? "0") + 1);
+      }
+
+      // Restart the burst animation from the top.
+      const burst = panel.querySelector<HTMLElement>(".like-burst");
+      if (burst) {
+        burst.classList.remove("is-bursting");
+        void burst.offsetWidth;
+        burst.classList.add("is-bursting");
+      }
+    };
+
+    const resetLikes = () => {
+      likeOnMedia.clear();
+      for (const panel of [...panels, loopClone]) {
+        panel.classList.remove("is-liked");
+        panel.querySelector<HTMLElement>(".like-burst")?.classList.remove("is-bursting");
+        const count = panel.querySelector<HTMLElement>("[data-like-count]");
+        if (count) {
+          count.textContent = formatCount(Number(count.dataset.base ?? "0"));
+        }
+      }
+    };
 
     const render = () => {
       column.style.transform = `translateY(-${panelIndex * 100}%)`;
@@ -300,6 +372,18 @@ const rows = [
     };
 
     const advance = () => {
+      // Sitting on the trailing copy: snap back to the real first spot without
+      // a transition. The two are identical, so the jump is invisible.
+      if (panelIndex === panels.length) {
+        column.style.transition = "none";
+        panelIndex = 0;
+        column.style.transform = "translateY(0%)";
+        void column.offsetHeight;
+        column.style.transition = "";
+        // A fresh pass through the feed starts with the likes cleared.
+        resetLikes();
+      }
+
       const lastMedia = mediaCountOf(panels[panelIndex]) - 1;
       // Sometimes move on before seeing every photo, the way a real user would.
       const skipAhead = Math.random() < SKIP_TO_NEXT_SPOT_CHANCE;
@@ -308,7 +392,8 @@ const rows = [
         mediaIndex += 1;
       } else {
         mediaIndex = 0;
-        panelIndex = (panelIndex + 1) % panels.length;
+        // Runs one past the last panel, onto the clone.
+        panelIndex += 1;
       }
 
       render();
@@ -317,6 +402,16 @@ const rows = [
 
     function schedule() {
       const dwell = DWELL_MIN_MS + Math.random() * (DWELL_MAX_MS - DWELL_MIN_MS);
+
+      // Like partway through looking at the photo, not the instant it appears.
+      if (panelIndex < panels.length) {
+        planLike(panelIndex);
+
+        if (likeOnMedia.get(panelIndex) === mediaIndex) {
+          likeTimer = setTimeout(() => applyLike(panels[panelIndex]), dwell * 0.45);
+        }
+      }
+
       timer = setTimeout(advance, dwell);
     }
 
@@ -330,6 +425,10 @@ const rows = [
       if (timer != null) {
         clearTimeout(timer);
         timer = null;
+      }
+      if (likeTimer != null) {
+        clearTimeout(likeTimer);
+        likeTimer = null;
       }
     };
 
@@ -374,7 +473,7 @@ const rows = [
 
 <style>
   .preview-section {
-    padding-block: clamp(72px, 10vw, 120px);
+    padding-block: var(--section-padding);
     background: var(--splash);
     border-block: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   }
@@ -815,6 +914,87 @@ const rows = [
     height: 15px;
   }
 
+  /* ---------- Like ---------- */
+
+  .like-icons {
+    position: relative;
+    display: inline-flex;
+    width: 15px;
+    height: 15px;
+  }
+
+  .like-icons img {
+    position: absolute;
+    inset: 0;
+    transition: opacity var(--duration-fast) ease, transform var(--duration-fast) ease;
+  }
+
+  .like-on {
+    opacity: 0;
+    transform: scale(0.6);
+    /* Brand green, like the filled heart in the app. */
+    filter: brightness(0) saturate(100%) invert(93%) sepia(21%) saturate(668%)
+      hue-rotate(43deg) brightness(103%) contrast(97%);
+  }
+
+  .feed-panel.is-liked .like-off {
+    opacity: 0;
+  }
+
+  .feed-panel.is-liked .like-on {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .feed-panel.is-liked .mini-action-count {
+    color: var(--color-brand-green);
+  }
+
+  /* The heart that bursts over the photo when a spot is liked. */
+  .like-burst {
+    position: absolute;
+    top: 44%;
+    left: 50%;
+    z-index: 3;
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .like-burst img {
+    width: 100%;
+    height: 100%;
+    filter: brightness(0) invert(1) drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+  }
+
+  .like-burst.is-bursting {
+    animation: like-burst 900ms var(--ease-out) forwards;
+  }
+
+  @keyframes like-burst {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    22% {
+      opacity: 0.95;
+      transform: scale(1.15);
+    }
+    42% {
+      transform: scale(0.98);
+    }
+    70% {
+      opacity: 0.95;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+
   .mini-action-count {
     font-size: 8px;
     font-weight: 700;
@@ -847,46 +1027,6 @@ const rows = [
   .mini-map-chevron {
     font-size: 14px;
     color: #fff;
-  }
-
-  /* ---------- End card ---------- */
-
-  .feed-panel--end {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(160deg, color-mix(in srgb, var(--color-brand-green) 12%, #000), #000 70%);
-  }
-
-  .mini-end-inner {
-    padding: 0 22px 60px;
-    text-align: left;
-  }
-
-  .mini-end-title {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
-    color: #fff;
-  }
-
-  .mini-end-body {
-    margin: 10px 0 18px;
-    font-size: 12.5px;
-    font-weight: 300;
-    line-height: 1.55;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .mini-end-cta {
-    display: inline-flex;
-    padding: 9px 16px;
-    border-radius: var(--radius-brand);
-    background: var(--color-brand-green);
-    color: #000;
-    font-size: 12px;
-    font-weight: 600;
   }
 
   /* ---------- Floating bottom nav ---------- */
