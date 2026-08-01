@@ -65,6 +65,8 @@ const feedSpots = (await fetchLandingSpots(locale)).grid;
     gap: 18px;
   }
 
+  /* Two per row all the way down: one card per row turned the section into an
+     endless column on a phone. */
   @media (max-width: 1024px) {
     .feed-grid {
       grid-template-columns: repeat(2, 1fr);
@@ -73,7 +75,7 @@ const feedSpots = (await fetchLandingSpots(locale)).grid;
 
   @media (max-width: 520px) {
     .feed-grid {
-      grid-template-columns: 1fr;
+      gap: 10px;
     }
   }
 </style>
