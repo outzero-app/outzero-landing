@@ -1,3 +1,5 @@
+import { getImage } from "astro:assets";
+import sharp from "sharp";
 import { t, type Locale, type Translations } from "../i18n/translations";
 
 const FUNCTIONS_BASE = "https://europe-west1-outzero.cloudfunctions.net";
@@ -779,19 +781,14 @@ export type ShowcaseSlot = "hero" | "story" | "cta";
 
 /** An editorial backdrop plus what's needed to credit the spot it came from. */
 export interface ShowcaseImage {
+  /** What the page links to: the re-encoded copy, served from our own origin. */
   url: string;
+  /** The Firebase original it was re-encoded from. Build diagnostics only. */
+  sourceUrl: string;
   spotId: string;
   name: string;
   authorHandle?: string;
 }
-
-/** Spot types each editorial backdrop draws from, in order of preference. */
-const SHOWCASE_SOURCES: Record<ShowcaseSlot, string[]> = {
-  // Lakes and beaches are listed last as extra sources of landscape shots.
-  hero: ["VWP", "SUM", "LAK"],
-  story: ["LAK", "NAT", "BEA"],
-  cta: ["SUM", "WTF", "VWP", "BEA"],
-};
 
 /**
  * Large photos from real top-ranked spots for the hero, story and CTA
@@ -811,7 +808,7 @@ async function pickPhotoPools(
     // section has to render something, but a rotation that quietly fills up
     // with portrait or 7MB shots would be worse than a shorter one.
     for (let i = 0; i < ROTATION_SIZES.photo; i++) {
-      const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used, i === 0);
+      const picked = await pickShowcaseImage(lang, slot, used, i === 0);
       if (!picked) {
         break;
       }
@@ -819,11 +816,13 @@ async function pickPhotoPools(
     }
 
     const first = result[slot][0];
-    const info = first ? await imageInfo(first.url) : null;
+    // Measured on the source: the re-encoded copy isn't written to disk until
+    // the build finishes, so there is nothing to weigh yet.
+    const info = first ? await imageInfo(first.sourceUrl) : null;
     console.info(
       `[spots] ${slot} backdrops: ${result[slot].length} options, first ${
         info ? `${info.width}x${info.height} (${(info.bytes / 1024 / 1024).toFixed(2)}MB)` : "none"
-      }`,
+      } -> ${first?.url ?? "none"}`,
     );
   }
 
@@ -840,37 +839,166 @@ interface ShowcaseRequirement {
   minWidth: number;
   minRatio?: number;
   maxRatio?: number;
-  /** Guards page weight: these are original uploads, occasionally huge. */
+  /**
+   * Guard on the *original*, and only that: since the photo gets re-encoded
+   * before it ships, what the uploader's phone weighed no longer says anything
+   * about what the reader downloads. It stays as a cost ceiling, to keep the
+   * build from pulling a 20MB file over the wire to inspect it.
+   */
   maxBytes?: number;
+  /**
+   * Ceiling on the re-encoded copy — the bytes that actually reach the reader.
+   *
+   * This is a filter I refused to apply to the originals, and the re-encode is
+   * what makes it safe. On an original, few bytes at a given resolution can
+   * just as easily mean a heavily-compressed photo full of artefacts, so
+   * filtering on weight would have quietly selected *for* bad images — exactly
+   * what the size requirements exist to prevent. Once every candidate is
+   * encoded by us at the same fixed quality, weight stops describing the
+   * encoder and starts describing the scene: a dense forest canopy costs more
+   * bytes than an open horizon at identical sharpness. Rejecting on that
+   * discards expensive photos, not poor ones.
+   */
+  maxEncodedBytes?: number;
 }
 
 const MB = 1024 * 1024;
+
+const KB = 1024;
 
 const SHOWCASE_REQUIREMENTS: Record<ShowcaseSlot, ShowcaseRequirement[]> = {
   // Progressively relaxed, so a thin catalogue still yields a backdrop.
   // The first tier is deliberately wide enough that several photos qualify —
   // a stricter bar would leave one eligible photo and freeze the rotation.
-  // The hero is the LCP element and loads eagerly, so it gets a tighter
-  // weight budget than the lazily-loaded CTA panel.
+  //
+  // Only the hero is held to an encoded-weight ceiling: it is the LCP element
+  // and the one photo the reader waits on. The story and CTA panels load lazily
+  // well below the fold, so their weight costs nobody a slower paint, and
+  // measuring them would mean downloading and encoding candidates during the
+  // build for no gain.
   hero: [
-    { minWidth: 1400, minRatio: 1.3, maxBytes: 1.2 * MB },
-    { minWidth: 1080, minRatio: 1.2, maxBytes: 1.5 * MB },
-    { minWidth: 900, minRatio: 1, maxBytes: 2.5 * MB },
+    { minWidth: 1400, minRatio: 1.3, maxBytes: 3 * MB, maxEncodedBytes: 320 * KB },
+    { minWidth: 1200, minRatio: 1.3, maxBytes: 3 * MB, maxEncodedBytes: 420 * KB },
+    { minWidth: 1080, minRatio: 1.2, maxBytes: 3 * MB },
+    { minWidth: 900, minRatio: 1, maxBytes: 4 * MB },
   ],
   cta: [
-    { minWidth: 1400, minRatio: 1.3, maxBytes: 2.5 * MB },
-    { minWidth: 1080, minRatio: 1.2, maxBytes: 2.5 * MB },
+    { minWidth: 1400, minRatio: 1.3, maxBytes: 3 * MB },
+    { minWidth: 1080, minRatio: 1.2, maxBytes: 3 * MB },
     { minWidth: 900, minRatio: 1, maxBytes: 4 * MB },
   ],
   story: [
-    { minWidth: 700, maxRatio: 1, maxBytes: 1.5 * MB },
-    { minWidth: 600, maxRatio: 1.1, maxBytes: 2 * MB },
+    { minWidth: 700, maxRatio: 1, maxBytes: 2 * MB },
+    { minWidth: 600, maxRatio: 1.1, maxBytes: 3 * MB },
     { minWidth: 600 },
   ],
 };
 
 /** How many photos we're willing to measure per slot before giving up. */
 const SHOWCASE_MEASURE_BUDGET = 60;
+
+/**
+ * Widest we ever render each backdrop, so a huge upload gets scaled down but a
+ * modest one is never scaled *up*. The full-bleed slots are capped at the
+ * common desktop width; the story card is a 4/5 frame that never exceeds a
+ * column, so twice its CSS width is already generous.
+ */
+const SHOWCASE_MAX_WIDTH: Record<ShowcaseSlot, number> = {
+  hero: 1920,
+  cta: 1920,
+  story: 1200,
+};
+
+/**
+ * WebP is far more efficient than the JPEG these come out of a phone as, so 82
+ * keeps the detail the requirements above were selected for while landing well
+ * under any of the originals.
+ */
+const SHOWCASE_QUALITY = 82;
+
+/**
+ * Re-encodes a backdrop through Astro's image pipeline instead of linking the
+ * original upload.
+ *
+ * The originals are the problem the size requirements can't reach: the hero
+ * pool measured 271KB to 716KB at an identical 1920x1080, because the weight
+ * is whatever the camera that took the photo decided, and on a throttled
+ * connection that spread alone moved LCP between 2.5s and 6.0s. Re-encoding
+ * fixes the quality rather than the resolution — the frame keeps every pixel it
+ * had, since the width is only ever clamped downwards — so nothing softens and
+ * the bytes stop being a lottery. It also serves them from our own origin,
+ * which takes a DNS lookup, a TCP handshake and a TLS negotiation off the
+ * critical path for the LCP element.
+ */
+const encodedSizeCache = new Map<string, number | null>();
+
+/**
+ * What the photo will weigh once re-encoded, by actually encoding it.
+ *
+ * There is no cheaper answer: how well a photo compresses is a property of what
+ * is in it, and the only way to know is to run it through the encoder. The
+ * result is cached because each slot walks the candidate list again for every
+ * option it needs, and because `getImage` will later re-encode the winner from
+ * Astro's own cache rather than fetching it a second time.
+ */
+async function encodedShowcaseBytes(url: string, slot: ShowcaseSlot): Promise<number | null> {
+  const key = `${slot}:${url}`;
+  const cached = encodedSizeCache.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  let bytes: number | null = null;
+
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      const source = Buffer.from(await response.arrayBuffer());
+      // Mirrors what the image pipeline is asked for below, or the number
+      // measured here would not describe the file that ships.
+      const encoded = await sharp(source)
+        .resize({ width: SHOWCASE_MAX_WIDTH[slot], withoutEnlargement: true })
+        .webp({ quality: SHOWCASE_QUALITY })
+        .toBuffer();
+      bytes = encoded.length;
+    }
+  } catch {
+    bytes = null;
+  }
+
+  encodedSizeCache.set(key, bytes);
+  return bytes;
+}
+
+async function optimizedShowcaseUrl(url: string, slot: ShowcaseSlot): Promise<string> {
+  const info = await imageInfo(url);
+
+  // Unmeasurable means we couldn't parse a header we understand; re-encoding
+  // blind risks handing sharp something it will reject mid-build.
+  if (!info || info.width < 1 || info.height < 1) {
+    return url;
+  }
+
+  const width = Math.min(info.width, SHOWCASE_MAX_WIDTH[slot]);
+  // Derived, not fixed: passing the slot's own aspect ratio would crop the
+  // photo, and the sections already frame it themselves with object-fit.
+  const height = Math.max(1, Math.round((width * info.height) / info.width));
+
+  try {
+    const image = await getImage({
+      src: url,
+      width,
+      height,
+      format: "webp",
+      quality: SHOWCASE_QUALITY,
+    });
+    return image.src;
+  } catch (error) {
+    // A backdrop that renders from Firebase beats a build that fails over one.
+    console.warn(`[spots] could not re-encode the ${slot} backdrop, using the original`, error);
+    return url;
+  }
+}
 
 const showcasePoolPromises = new Map<Locale, Promise<SpotPreview[]>>();
 
@@ -927,7 +1055,6 @@ async function loadShowcasePool(lang: Locale): Promise<SpotPreview[]> {
 
 async function pickShowcaseImage(
   lang: Locale,
-  spotTypes: string[],
   slot: ShowcaseSlot,
   used: Set<string>,
   allowFallback: boolean,
@@ -937,17 +1064,16 @@ async function pickShowcaseImage(
     (spot) => !used.has(spot.id) && spot.media.some((url) => !isVideoUrl(url)),
   );
 
-  // Spots of the slot's preferred types first, then everything else, so the
-  // hero still leans on miradores/cumbres without being limited to them.
-  const preferred = pool.filter((spot) => spotTypes.includes(spot.spotType));
-  const rest = pool.filter((spot) => !spotTypes.includes(spot.spotType));
+  // Every spot type competes on equal terms. Filtering by type used to look
+  // like a preference — favoured types first, the rest behind them — but the
+  // measuring budget below is spent long before the tail is reached (the hero's
+  // three types alone cover 435 of the 809 spots with photos), so in practice
+  // no other category could ever be chosen. What makes a photo suit a backdrop
+  // is its resolution and shape, and that is what the requirements measure.
   const score = (spot: SpotPreview) =>
     scoreSpot({ ...spot, coverUrl: "", mediaCount: spot.media.length });
 
-  const candidates = [
-    ...weightedShuffle(preferred, score, random),
-    ...weightedShuffle(rest, score, random),
-  ]
+  const candidates = weightedShuffle(pool, score, random)
     // The first image is the spot's cover, the one the app leads with.
     .map((spot) => ({ spot, photo: spot.media.find((url) => !isVideoUrl(url)) }))
     .filter((entry): entry is { spot: SpotPreview; photo: string } => entry.photo != null)
@@ -961,7 +1087,8 @@ async function pickShowcaseImage(
     const author = entry.spot.createdBy ? await fetchAuthor(entry.spot.createdBy) : null;
 
     return {
-      url: entry.photo,
+      url: await optimizedShowcaseUrl(entry.photo, slot),
+      sourceUrl: entry.photo,
       spotId: entry.spot.id,
       name: entry.spot.translation.name,
       authorHandle: author?.handle ?? undefined,
@@ -984,9 +1111,20 @@ async function pickShowcaseImage(
         (requirement.maxRatio == null || ratio <= requirement.maxRatio) &&
         (requirement.maxBytes == null || info.bytes <= requirement.maxBytes);
 
-      if (fits) {
-        return credited(candidate);
+      if (!fits) {
+        continue;
       }
+
+      // Checked last, and only for the tiers that ask for it: everything above
+      // reads a header, while this downloads the whole file and encodes it.
+      if (requirement.maxEncodedBytes != null) {
+        const encoded = await encodedShowcaseBytes(candidate.photo, slot);
+        if (encoded == null || encoded > requirement.maxEncodedBytes) {
+          continue;
+        }
+      }
+
+      return credited(candidate);
     }
   }
 

@@ -456,25 +456,55 @@ const rows = [
     // The gallery photos ship as loading="lazy" so they stay out of the hero's
     // way during LCP, but lazy alone is wrong for a carousel that advances on a
     // timer: only the panel on screen counts as "near the viewport", so panels
-    // two and three were still blank when their turn came. This pulls all of
-    // them in as the mockup approaches — well before the carousel starts, since
-    // that waits for 20% visibility and this fires 1200px earlier.
+    // two and three were still blank when their turn came.
+    //
+    // Fetched in waves rather than all at once. Forty-odd photos released
+    // together let the second panel queue behind the twelfth and it was still
+    // blank when the carousel reached it, so the panels the reader meets first
+    // go out on their own and the rest follow at low priority once those are
+    // under way.
+    const PRELOAD_LEAD_PANELS = 3;
+
+    const releasePanels = (from: number, to: number, priority?: "low") => {
+      const panels = [...root.querySelectorAll<HTMLElement>("[data-feed-panel]")];
+      for (const panel of panels.slice(from, to)) {
+        for (const image of panel.querySelectorAll<HTMLImageElement>(".feed-image")) {
+          // Set before `loading`, which starts the fetch on assignment.
+          if (priority) {
+            image.fetchPriority = priority;
+          }
+          image.loading = "eager";
+        }
+      }
+    };
+
     const preload = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) {
           return;
         }
 
-        for (const image of root.querySelectorAll<HTMLImageElement>(".feed-image")) {
-          image.loading = "eager";
-        }
-
         preload.disconnect();
+        releasePanels(0, PRELOAD_LEAD_PANELS);
+        // The tail is only needed minutes into the carousel, so it waits until
+        // the lead panels have had the connection to themselves.
+        window.setTimeout(() => releasePanels(PRELOAD_LEAD_PANELS, Infinity, "low"), 2000);
       },
       { rootMargin: "1200px" },
     );
 
-    preload.observe(root);
+    // Deferred to `load`, not started here. On a short viewport the mockup sits
+    // inside that 1200px margin from the moment the page opens, so observing
+    // immediately meant the demo's photos competed with the hero for bandwidth
+    // and pushed LCP from ~1.9s to ~2.7s on a throttled connection. Waiting
+    // costs nothing: the reader is still several screens away.
+    const startPreload = () => preload.observe(root);
+
+    if (document.readyState === "complete") {
+      startPreload();
+    } else {
+      window.addEventListener("load", startPreload, { once: true });
+    }
 
     // Only runs while on screen and in a foreground tab. A reduced-motion
     // preference must not disable the demo outright — global.css already
