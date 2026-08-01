@@ -258,6 +258,20 @@ const proofs = [
     .store-badge {
       height: 42px;
     }
+
+    /* The proof chips wrap onto two lines here and run into the photo credit
+       pinned bottom-right. They're a nice-to-have and the same claims appear
+       again further down the page, so they give way. */
+    .hero-proofs {
+      display: none;
+    }
+  }
+
+  /* On the narrowest phones the hint line reaches the credit too. */
+  @media (max-width: 400px) {
+    .hero-hint {
+      display: none;
+    }
   }
 
   /* Short viewports (most phones in landscape, small laptops): tighten the
@@ -297,7 +311,8 @@ const proofs = [
   }
 
   @media (max-height: 620px) {
-    .hero-hint {
+    .hero-hint,
+    .hero-proofs {
       display: none;
     }
 

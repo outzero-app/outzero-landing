@@ -182,11 +182,18 @@
  * --------------------------------------------------------------------------*/
 html {
   scroll-behavior: smooth;
-  /* Page Down / Space land on a section boundary instead of mid-content.
-   * `proximity` (not `mandatory`) so sections taller than the viewport can
-   * still be scrolled through freely. */
-  scroll-snap-type: y proximity;
   scroll-padding-top: var(--navbar-height);
+}
+
+/* Page Down / Space land on a section boundary instead of mid-content.
+ * Restricted to mouse-driven viewports on purpose: combined with touch
+ * momentum scrolling, snapping fights the finger and the page feels like it
+ * is catching. `proximity` (not `mandatory`) so long sections still scroll
+ * through freely. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+  html {
+    scroll-snap-type: y proximity;
+  }
 }
 
 :root {
