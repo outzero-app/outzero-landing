@@ -24,16 +24,18 @@ const country = countryDisplayName(spot.countryCode, locale);
   target="_blank"
   rel="noopener"
   class="spot-card"
+  data-spot-card
+  data-spot-id={spot.id}
   aria-label={`${spot.translation.name}, ${country}`}
 >
-  <img src={spot.coverUrl} alt="" class="spot-card-img" loading="lazy" />
+  <img src={spot.coverUrl} alt="" class="spot-card-img" data-spot-card-cover loading="lazy" />
   <div class="spot-card-scrim" aria-hidden="true"></div>
 
-  <span class="spot-card-country">{country}</span>
+  <span class="spot-card-country" data-spot-card-country>{country}</span>
 
   <div class="spot-card-bottom">
-    <h3 class="spot-card-title">{spot.translation.name}</h3>
-    <span class="spot-card-type">{typeLabel}</span>
+    <h3 class="spot-card-title" data-spot-card-title>{spot.translation.name}</h3>
+    <span class="spot-card-type" data-spot-card-type>{typeLabel}</span>
   </div>
 </a>
 

@@ -1,4 +1,4 @@
-import type { Locale, Translations } from "../i18n/translations";
+import { t, type Locale, type Translations } from "../i18n/translations";
 
 const FUNCTIONS_BASE = "https://europe-west1-outzero.cloudfunctions.net";
 
@@ -419,6 +419,45 @@ async function fetchTopSpotsByType(
  * Everything the landing needs, allocated in one pass so a spot never shows up
  * in two sections at once.
  */
+/**
+ * A spot reduced to what the browser needs to swap it into a card. These pools
+ * are embedded in the page so each visit shows a different line-up without any
+ * runtime call to Firebase.
+ */
+export interface RotationOption {
+  id: string;
+  name: string;
+  country: string;
+  typeCode: string;
+  typeLabel: string;
+  cover: string;
+}
+
+/** A photo option for the story / CTA backdrops, with its credit. */
+export interface RotationPhoto {
+  id: string;
+  name: string;
+  url: string;
+  author?: string;
+}
+
+export interface LandingRotation {
+  /** Several options per category tile, keyed by SpotType code. */
+  tiles: Record<string, RotationOption[]>;
+  /** Candidates for the feed grid; the browser picks eight with variety. */
+  grid: RotationOption[];
+  hero: RotationPhoto[];
+  story: RotationPhoto[];
+  cta: RotationPhoto[];
+}
+
+/** How many alternatives each rotating slot carries. */
+const ROTATION_SIZES = {
+  perTile: 4,
+  grid: 24,
+  photo: 6,
+} as const;
+
 export interface LandingSpots {
   /** One entry per SPOT_TYPES category, in the same order; null when empty. */
   tiles: Array<FeedSpot | null>;
@@ -430,6 +469,8 @@ export interface LandingSpots {
   showcase: Record<ShowcaseSlot, ShowcaseImage | null>;
   /** Small thumbnail for the mockup's account tab. */
   accountAvatar: string | null;
+  /** Alternatives shipped to the browser so each visit differs. */
+  rotation: LandingRotation;
 }
 
 const landingCache = new Map<Locale, Promise<LandingSpots>>();
@@ -456,21 +497,69 @@ async function buildLandingSpots(lang: Locale): Promise<LandingSpots> {
   // showcase backdrops draw from the whole catalogue.
   const used = new Set<string>();
 
-  const tiles = await pickTiles(lang, used);
-  const grid = await pickGrid(lang, used);
+  const tilePools = await pickTilePools(lang, used);
+  const gridPool = await pickGridPool(lang, used);
   const miniFeed = await pickMiniFeed(lang, used);
-  const showcase = await resolveShowcaseImages(lang, used);
+  const photoPools = await pickPhotoPools(lang, used);
   const accountAvatar = await pickAccountThumbnail(lang, used);
 
-  return { tiles, grid, miniFeed, showcase, accountAvatar };
+  const strings = t(lang);
+  const asOption = (spot: FeedSpot): RotationOption => ({
+    id: spot.id,
+    name: spot.translation.name,
+    country: countryDisplayName(spot.countryCode, lang),
+    typeCode: spot.spotType,
+    typeLabel: spotTypeLabelSingular(spot.spotType, strings),
+    cover: spot.coverUrl,
+  });
+
+  // The server renders the first of each pool, so the page works without JS
+  // and the browser has something to swap from.
+  const tiles = TILE_SPOT_TYPES.map((type) => tilePools[type.code]?.[0] ?? null);
+
+  return {
+    tiles,
+    grid: gridPool.slice(0, 8),
+    miniFeed,
+    showcase: {
+      hero: photoPools.hero[0] ?? null,
+      story: photoPools.story[0] ?? null,
+      cta: photoPools.cta[0] ?? null,
+    },
+    accountAvatar,
+    rotation: {
+      tiles: Object.fromEntries(
+        Object.entries(tilePools).map(([code, spots]) => [code, spots.map(asOption)]),
+      ),
+      grid: gridPool.map(asOption),
+      hero: photoPools.hero.map(asPhoto),
+      story: photoPools.story.map(asPhoto),
+      cta: photoPools.cta.map(asPhoto),
+    },
+  };
 }
 
-/** One well-ranked spot per category, drawn at random from the top of its pool. */
-async function pickTiles(lang: Locale, used: Set<string>): Promise<Array<FeedSpot | null>> {
-  const tiles: Array<FeedSpot | null> = [];
+function asPhoto(image: ShowcaseImage): RotationPhoto {
+  return {
+    id: image.spotId,
+    name: image.name,
+    url: image.url,
+    author: image.authorHandle,
+  };
+}
+
+/**
+ * A handful of well-ranked spots per category rather than one, so the browser
+ * can show a different spot behind each tile on every visit.
+ */
+async function pickTilePools(
+  lang: Locale,
+  used: Set<string>,
+): Promise<Record<string, FeedSpot[]>> {
+  const pools: Record<string, FeedSpot[]> = {};
 
   for (const type of TILE_SPOT_TYPES) {
-    const spots = (await fetchTopSpotsByType(type.code, lang, 12)).filter(
+    const spots = (await fetchTopSpotsByType(type.code, lang, 16)).filter(
       (spot) => !used.has(spot.id) && hasDisplayableMedia(spot.media),
     );
 
@@ -480,21 +569,26 @@ async function pickTiles(lang: Locale, used: Set<string>): Promise<Array<FeedSpo
       rngFor(`tile:${type.code}`),
     );
 
-    let picked: FeedSpot | null = null;
+    const pool: FeedSpot[] = [];
 
     for (const spot of ordered) {
+      if (pool.length >= ROTATION_SIZES.perTile) {
+        break;
+      }
+
       const coverUrl = await coverUrlFor(spot.media, "card");
       if (coverUrl) {
-        picked = { ...spot, coverUrl, mediaCount: spot.media.length };
+        pool.push({ ...spot, coverUrl, mediaCount: spot.media.length });
         used.add(spot.id);
-        break;
       }
     }
 
-    tiles.push(picked);
+    if (pool.length > 0) {
+      pools[type.code] = pool;
+    }
   }
 
-  return tiles;
+  return pools;
 }
 
 /**
@@ -502,7 +596,7 @@ async function pickTiles(lang: Locale, used: Set<string>): Promise<Array<FeedSpo
  * picks a spread that maximises variety: one country and one spot type at a
  * time, so the grid never fills up with eight beaches from the same place.
  */
-async function pickGrid(lang: Locale, used: Set<string>): Promise<FeedSpot[]> {
+async function pickGridPool(lang: Locale, used: Set<string>): Promise<FeedSpot[]> {
   const perType = await Promise.all(
     SPOT_TYPES.map((type) => fetchTopSpotsByType(type.code, lang, 12)),
   );
@@ -522,7 +616,11 @@ async function pickGrid(lang: Locale, used: Set<string>): Promise<FeedSpot[]> {
     }
   }
 
-  const picked = await resolveCovers(pickVariedSpots(candidates, 8), "card");
+  // A pool rather than exactly eight: the browser draws its own eight from it.
+  const picked = await resolveCovers(
+    pickVariedSpots(candidates, ROTATION_SIZES.grid),
+    "card",
+  );
 
   for (const spot of picked) {
     used.add(spot.id);
@@ -699,23 +797,27 @@ const SHOWCASE_SOURCES: Record<ShowcaseSlot, string[]> = {
  * Large photos from real top-ranked spots for the hero, story and CTA
  * backdrops, instead of stock imagery.
  */
-async function resolveShowcaseImages(
+async function pickPhotoPools(
   lang: Locale,
   used: Set<string>,
-): Promise<Record<ShowcaseSlot, ShowcaseImage | null>> {
-  const result: Record<ShowcaseSlot, ShowcaseImage | null> = {
-    hero: null,
-    story: null,
-    cta: null,
-  };
+): Promise<Record<ShowcaseSlot, ShowcaseImage[]>> {
+  const result: Record<ShowcaseSlot, ShowcaseImage[]> = { hero: [], story: [], cta: [] };
 
   for (const slot of ["hero", "story", "cta"] as ShowcaseSlot[]) {
-    const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used);
-    result[slot] = picked;
+    // Several photos per slot so the browser can pick a different one each
+    // visit; they all have to clear the same size and orientation bar.
+    for (let i = 0; i < ROTATION_SIZES.photo; i++) {
+      const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used);
+      if (!picked) {
+        break;
+      }
+      result[slot].push(picked);
+    }
 
-    const info = picked ? await imageInfo(picked.url) : null;
+    const first = result[slot][0];
+    const info = first ? await imageInfo(first.url) : null;
     console.info(
-      `[spots] ${slot} backdrop: ${
+      `[spots] ${slot} backdrops: ${result[slot].length} options, first ${
         info ? `${info.width}x${info.height} (${(info.bytes / 1024 / 1024).toFixed(2)}MB)` : "none"
       }`,
     );

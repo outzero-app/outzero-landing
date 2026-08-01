@@ -13,10 +13,12 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
-const photo = (await fetchLandingSpots(locale)).showcase.story;
+const landing = await fetchLandingSpots(locale);
+const photo = landing.showcase.story;
+const storyPool = landing.rotation.story;
 ---
 
-<section id="about" class="story-section" aria-labelledby="about-title">
+<section id="about" class="story-section" data-story-root aria-labelledby="about-title">
   <div class="oz-story-grid">
     <div>
       <p class="section-kicker">{strings.about_label}</p>
@@ -30,12 +32,59 @@ const photo = (await fetchLandingSpots(locale)).showcase.story;
 
     {photo && (
       <div class="story-photo-wrap">
-        <img src={photo.url} alt="" class="story-photo" loading="lazy" />
+        <img src={photo.url} alt="" class="story-photo" data-story-photo loading="lazy" />
         <PhotoCredit image={photo} locale={locale} placement="bottom-left" />
       </div>
     )}
   </div>
 </section>
+
+<script type="application/json" data-story-rotation set:html={JSON.stringify(storyPool)}></script>
+
+<script>
+  interface RotationPhoto {
+    id: string;
+    name: string;
+    url: string;
+    author?: string;
+  }
+
+  function randomItem<T>(items: T[]): T | null {
+    if (items.length === 0) {
+      return null;
+    }
+    return items[Math.floor(Math.random() * items.length)] ?? null;
+  }
+
+  const root = document.querySelector<HTMLElement>("[data-story-root]");
+  const rotationNode = document.querySelector<HTMLScriptElement>("[data-story-rotation]");
+  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
+  const picked = randomItem(pool);
+
+  if (root && picked) {
+    root.querySelector<HTMLImageElement>("[data-story-photo]")?.setAttribute("src", picked.url);
+
+    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
+    if (credit) {
+      credit.href = `https://web.outzero.app/spot/${picked.id}`;
+      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
+
+      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
+      if (picked.author) {
+        if (existingAuthor) {
+          existingAuthor.replaceChildren(picked.author);
+        } else {
+          const author = document.createElement("span");
+          author.className = "photo-credit-author";
+          author.textContent = picked.author;
+          credit.appendChild(author);
+        }
+      } else if (existingAuthor) {
+        existingAuthor.remove();
+      }
+    }
+  }
+</script>
 
 <style>
   .story-section {

@@ -13,13 +13,15 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
-const photo = (await fetchLandingSpots(locale)).showcase.cta;
+const landing = await fetchLandingSpots(locale);
+const photo = landing.showcase.cta;
+const ctaPool = landing.rotation.cta;
 ---
 
-<section class="page-section" aria-labelledby="cta-title">
+<section class="page-section" data-cta-root aria-labelledby="cta-title">
   <div class="oz-container">
     <div class="cta-panel">
-      {photo && <img src={photo.url} alt="" class="cta-photo" loading="lazy" />}
+      {photo && <img src={photo.url} alt="" class="cta-photo" data-cta-photo loading="lazy" />}
       <div class="cta-overlay" aria-hidden="true"></div>
       {photo && <PhotoCredit image={photo} locale={locale} />}
 
@@ -34,6 +36,53 @@ const photo = (await fetchLandingSpots(locale)).showcase.cta;
     </div>
   </div>
 </section>
+
+<script type="application/json" data-cta-rotation set:html={JSON.stringify(ctaPool)}></script>
+
+<script>
+  interface RotationPhoto {
+    id: string;
+    name: string;
+    url: string;
+    author?: string;
+  }
+
+  function randomItem<T>(items: T[]): T | null {
+    if (items.length === 0) {
+      return null;
+    }
+    return items[Math.floor(Math.random() * items.length)] ?? null;
+  }
+
+  const root = document.querySelector<HTMLElement>("[data-cta-root]");
+  const rotationNode = document.querySelector<HTMLScriptElement>("[data-cta-rotation]");
+  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
+  const picked = randomItem(pool);
+
+  if (root && picked) {
+    root.querySelector<HTMLImageElement>("[data-cta-photo]")?.setAttribute("src", picked.url);
+
+    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
+    if (credit) {
+      credit.href = `https://web.outzero.app/spot/${picked.id}`;
+      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
+
+      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
+      if (picked.author) {
+        if (existingAuthor) {
+          existingAuthor.replaceChildren(picked.author);
+        } else {
+          const author = document.createElement("span");
+          author.className = "photo-credit-author";
+          author.textContent = picked.author;
+          credit.appendChild(author);
+        }
+      } else if (existingAuthor) {
+        existingAuthor.remove();
+      }
+    }
+  }
+</script>
 
 <style>
   .cta-panel {

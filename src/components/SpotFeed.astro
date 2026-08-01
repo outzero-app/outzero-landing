@@ -15,7 +15,9 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
-const feedSpots = (await fetchLandingSpots(locale)).grid;
+const landing = await fetchLandingSpots(locale);
+const feedSpots = landing.grid;
+const gridPool = landing.rotation.grid;
 ---
 
 {feedSpots.length > 0 && (
@@ -37,6 +39,52 @@ const feedSpots = (await fetchLandingSpots(locale)).grid;
     </div>
   </section>
 )}
+
+<script type="application/json" data-feed-rotation set:html={JSON.stringify(gridPool)}></script>
+
+<script>
+  interface RotationOption {
+    id: string;
+    name: string;
+    country: string;
+    typeCode: string;
+    typeLabel: string;
+    cover: string;
+  }
+
+  function shuffle<T>(items: T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j] ?? copy[i], copy[i] ?? copy[j]];
+    }
+    return copy;
+  }
+
+  const rotationNode = document.querySelector<HTMLScriptElement>("[data-feed-rotation]");
+  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationOption[] : [];
+  const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-spot-card]"));
+
+  if (cards.length > 0 && pool.length > 0) {
+    const picks = shuffle(pool).slice(0, cards.length);
+
+    cards.forEach((card, index) => {
+      const picked = picks[index];
+      if (!picked) {
+        return;
+      }
+
+      card.href = `https://web.outzero.app/spot/${picked.id}`;
+      card.setAttribute("data-spot-id", picked.id);
+      card.setAttribute("aria-label", `${picked.name}, ${picked.country}`);
+
+      card.querySelector<HTMLImageElement>("[data-spot-card-cover]")?.setAttribute("src", picked.cover);
+      card.querySelector<HTMLElement>("[data-spot-card-country]")?.replaceChildren(picked.country);
+      card.querySelector<HTMLElement>("[data-spot-card-title]")?.replaceChildren(picked.name);
+      card.querySelector<HTMLElement>("[data-spot-card-type]")?.replaceChildren(picked.typeLabel);
+    });
+  }
+</script>
 
 <style>
   .feed-header {

@@ -21,7 +21,9 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero
 const exploreUrl = "https://web.outzero.app/explore";
 
 // A real mirador/summit shot rather than stock photography.
-const backdrop = (await fetchLandingSpots(locale)).showcase.hero;
+const landing = await fetchLandingSpots(locale);
+const backdrop = landing.showcase.hero;
+const heroPool = landing.rotation.hero;
 
 const proofs = [
   strings.hero_proof_exact_locations,
@@ -31,8 +33,8 @@ const proofs = [
 ];
 ---
 
-<header id="hero" class="hero">
-  {backdrop && <img src={backdrop.url} alt="" class="hero-photo" fetchpriority="high" />}
+<header id="hero" class="hero" data-hero-root>
+  {backdrop && <img src={backdrop.url} alt="" class="hero-photo" data-hero-photo fetchpriority="high" />}
   <div class="hero-tint" aria-hidden="true"></div>
   <div class="hero-fade" aria-hidden="true"></div>
 
@@ -81,6 +83,53 @@ const proofs = [
 
   {backdrop && <PhotoCredit image={backdrop} locale={locale} />}
 </header>
+
+<script type="application/json" data-hero-rotation set:html={JSON.stringify(heroPool)}></script>
+
+<script>
+  interface RotationPhoto {
+    id: string;
+    name: string;
+    url: string;
+    author?: string;
+  }
+
+  function randomItem<T>(items: T[]): T | null {
+    if (items.length === 0) {
+      return null;
+    }
+    return items[Math.floor(Math.random() * items.length)] ?? null;
+  }
+
+  const root = document.querySelector<HTMLElement>("[data-hero-root]");
+  const rotationNode = document.querySelector<HTMLScriptElement>("[data-hero-rotation]");
+  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
+  const picked = randomItem(pool);
+
+  if (root && picked) {
+    root.querySelector<HTMLImageElement>("[data-hero-photo]")?.setAttribute("src", picked.url);
+
+    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
+    if (credit) {
+      credit.href = `https://web.outzero.app/spot/${picked.id}`;
+      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
+
+      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
+      if (picked.author) {
+        if (existingAuthor) {
+          existingAuthor.replaceChildren(picked.author);
+        } else {
+          const author = document.createElement("span");
+          author.className = "photo-credit-author";
+          author.textContent = picked.author;
+          credit.appendChild(author);
+        }
+      } else if (existingAuthor) {
+        existingAuthor.remove();
+      }
+    }
+  }
+</script>
 
 <style>
   /* Exactly one screen tall: the hero is the section that must always be

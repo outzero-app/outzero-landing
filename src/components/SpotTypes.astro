@@ -21,7 +21,9 @@ interface Props {
 const { locale } = Astro.props;
 const strings = t(locale);
 
-const revealSpots = (await fetchLandingSpots(locale)).tiles;
+const landing = await fetchLandingSpots(locale);
+const revealSpots = landing.tiles;
+const tilePools = landing.rotation.tiles;
 ---
 
 <section id="spot-types" class="page-section" aria-labelledby="spot-types-title">
@@ -45,10 +47,12 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
           <div
             class="flip-tile"
             data-flip-tile
+            data-type-code={type.code}
             data-flippable={spot ? "true" : "false"}
             tabindex={spot ? 0 : undefined}
             role={spot ? "button" : undefined}
             aria-pressed={spot ? "false" : undefined}
+            data-tile-label={label}
             aria-label={spot ? `${label}: ${spot.translation.name}` : label}
           >
             <div class="flip-inner">
@@ -63,18 +67,19 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
 
               {spot && (
                 <div class="flip-face flip-back">
-                  <img src={spot.coverUrl} alt="" class="back-img" loading="lazy" />
+                  <img src={spot.coverUrl} alt="" class="back-img" data-spot-cover loading="lazy" />
                   <div class="back-scrim" aria-hidden="true"></div>
-                  <span class="back-country">{countryDisplayName(spot.countryCode, locale)}</span>
+                  <span class="back-country" data-spot-country>{countryDisplayName(spot.countryCode, locale)}</span>
                   <div class="back-info">
-                    <span class="back-title">{spot.translation.name}</span>
+                    <span class="back-title" data-spot-name>{spot.translation.name}</span>
                     {/* Singular: the tag describes this one spot, not the category. */}
-                    <span class="back-type">{spotTypeLabelSingular(spot.spotType, strings)}</span>
+                    <span class="back-type" data-spot-type>{spotTypeLabelSingular(spot.spotType, strings)}</span>
                   </div>
                   {/* A real link rather than window.open, which pop-up blockers
                       swallow. Inert until the tile is flipped. */}
                   <a
                     class="back-link"
+                    data-spot-link
                     href={spotUrl(spot.id)}
                     target="_blank"
                     rel="noopener"
@@ -91,12 +96,62 @@ const revealSpots = (await fetchLandingSpots(locale)).tiles;
   </div>
 </section>
 
+<script type="application/json" data-spot-types-rotation set:html={JSON.stringify(tilePools)}></script>
+
 <script>
   // Pointer devices reveal a tile on hover, handled entirely in CSS. This
-  // script is the touch equivalent: tap to reveal, tap again to open. At most
-  // three tiles stay revealed, and each flips back on its own.
+  // script is the touch equivalent: tap to reveal, tap again to open.
   const AUTO_CLOSE_MS = 3000;
-  const MAX_OPEN = 3;
+  // Effectively no cap: the 3s auto-close already keeps the grid tidy, and
+  // evicting tiles made them snap shut while you were still tapping around.
+  const MAX_OPEN = 99;
+
+  interface RotationOption {
+    id: string;
+    name: string;
+    country: string;
+    typeCode: string;
+    typeLabel: string;
+    cover: string;
+  }
+
+  function randomItem<T>(items: T[]): T | null {
+    if (items.length === 0) {
+      return null;
+    }
+    return items[Math.floor(Math.random() * items.length)] ?? null;
+  }
+
+  const rotationNode = document.querySelector<HTMLScriptElement>("[data-spot-types-rotation]");
+  const rotation = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as Record<string, RotationOption[]> : {};
+
+  document.querySelectorAll<HTMLElement>("[data-flip-tile][data-flippable='true']").forEach((tile) => {
+    const typeCode = tile.dataset.typeCode;
+    if (!typeCode) {
+      return;
+    }
+
+    const picked = randomItem(rotation[typeCode] ?? []);
+    if (!picked) {
+      return;
+    }
+
+    tile.querySelector<HTMLImageElement>("[data-spot-cover]")?.setAttribute("src", picked.cover);
+    tile.querySelector<HTMLElement>("[data-spot-country]")?.replaceChildren(picked.country);
+    tile.querySelector<HTMLElement>("[data-spot-name]")?.replaceChildren(picked.name);
+    tile.querySelector<HTMLElement>("[data-spot-type]")?.replaceChildren(picked.typeLabel);
+
+    const link = tile.querySelector<HTMLAnchorElement>("[data-spot-link]");
+    if (link) {
+      link.href = `https://web.outzero.app/spot/${picked.id}`;
+      link.setAttribute("aria-label", picked.name);
+    }
+
+    const tileLabel = tile.dataset.tileLabel;
+    if (tileLabel) {
+      tile.setAttribute("aria-label", `${tileLabel}: ${picked.name}`);
+    }
+  });
 
   const open: HTMLElement[] = [];
   const timers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
