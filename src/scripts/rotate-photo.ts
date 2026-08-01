@@ -6,7 +6,7 @@
  * The pool is embedded in the page at build time as a JSON script block; this
  * only draws from it and rewrites the photo and its credit.
  */
-import { fadeInImage } from "./fade-in-image";
+import { swapImage } from "./fade-in-image";
 
 interface RotationPhoto {
   id: string;
@@ -37,8 +37,7 @@ export function rotatePhoto(rootSelector: string, poolSelector: string, photoSel
 
   const image = root.querySelector<HTMLImageElement>(photoSelector);
   if (image) {
-    fadeInImage(image);
-    image.setAttribute("src", picked.url);
+    swapImage(image, picked.url);
   }
 
   const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");

@@ -1,72 +1,69 @@
 /**
- * Fades a photo in *only if it is slow enough to be noticed*.
+ * Points an <img> at a new photo, fading it in when that's an improvement and
+ * leaving it alone when it isn't.
  *
- * The rotating photos get their src from JavaScript, so a slow one pops into
- * place. Hiding every image until it loads is worse though: one that comes
- * straight from cache would then blink for no reason.
+ * Two rules do all the work:
  *
- * So the image is left alone for a grace period. If it hasn't arrived by then
- * — meaning there is nothing painted yet, so hiding it costs nothing and can't
- * flash — it's marked pending, and loading transitions it back to full opacity.
- * An image that beats the grace period is never touched at all.
+ * 1. **Never hide pixels the reader can already see.** If the element is
+ *    showing something, the swap happens in place — the browser keeps the old
+ *    frame until the new one is decoded. Hiding it first would blink the photo
+ *    to black, which is worse than the pop the fade exists to avoid.
+ * 2. **Hide before the first paint, not after.** When the element is blank
+ *    there is nothing to flash, so it can be hidden for free and revealed on
+ *    load.
  *
- * Call this *before* assigning the new src.
+ * The first rule is why this takes the URL instead of leaving the caller to
+ * assign it: the decision depends on the state of the element *before* the src
+ * changes, and by the time the caller has assigned it that state is gone.
  */
+
 /**
- * How long a photo may take before it's worth fading in.
+ * Below this, revealing without a transition looks better than fading: 450ms of
+ * fade on a photo that was already there just reads as lag.
  *
- * Measured rather than guessed: on localhost these photos take 210–380ms from
- * `src` to `load`, and a warm cache barely helps (211ms vs 273ms for the same
- * file) because the cost is decoding a 1–2 megapixel JPEG, not the transfer.
- * So "was it cached" is the wrong question — 200ms is simply the point where a
- * hard pop starts to read as a glitch instead of as the page drawing itself.
+ * Measured, not guessed: these photos take 210–380ms from `src` to `load` on
+ * localhost, and a warm cache barely moves that (211ms vs 273ms for the same
+ * file) because the cost is decoding a 1–2 megapixel JPEG rather than the
+ * transfer — so asking "was it cached" would not have answered anything.
  */
 const GRACE_MS = 200;
 
-/**
- * A `loading="lazy"` image is fetched well before it scrolls into view, so by
- * the time it is this close the request is long since underway: if it still
- * hasn't finished, it really is slow. Starting the clock any earlier would put
- * a fade on cached photos, which is the thing we're trying to avoid.
- */
-const LAZY_MARGIN = "200px";
-
-function arm(image: HTMLImageElement): void {
-  // Already decoded — a cache hit, or the browser simply got there first.
-  if (image.complete && image.naturalWidth > 0) {
+export function swapImage(image: HTMLImageElement, url: string): void {
+  // The rotation can land on the photo the server already rendered. Reassigning
+  // the same src may not fire `load` at all, which would strand the reveal.
+  if (image.getAttribute("src") === url) {
     return;
   }
 
-  const pending = window.setTimeout(() => {
-    image.classList.add("oz-img-fade", "oz-img-pending");
-  }, GRACE_MS);
+  // Rule 1. `naturalWidth` is the honest test for "has pixels": it turns
+  // non-zero as soon as the header arrives, so it also covers a progressive
+  // JPEG that is still downloading but has already painted its first pass.
+  if (image.naturalWidth > 0) {
+    image.setAttribute("src", url);
+    return;
+  }
 
-  const settle = () => {
-    window.clearTimeout(pending);
+  // Rule 2.
+  image.classList.add("oz-img-pending");
+  const startedAt = performance.now();
+
+  const reveal = () => {
+    // A lazy image always fades: its clock starts when the src is assigned but
+    // the browser doesn't fetch it until it nears the viewport, so the elapsed
+    // time says nothing — and a photo arriving as you scroll to it has no
+    // "already there" state to preserve anyway.
+    if (image.loading === "lazy" || performance.now() - startedAt > GRACE_MS) {
+      image.classList.add("oz-img-fade");
+    }
+
+    // Removing this in the same task as adding the transition is what starts
+    // it: the transition is read from the style the change produces.
     image.classList.remove("oz-img-pending");
   };
 
-  image.addEventListener("load", settle, { once: true });
+  image.addEventListener("load", reveal, { once: true });
   // A broken image must not stay invisible: the alt text and layout still count.
-  image.addEventListener("error", settle, { once: true });
-}
+  image.addEventListener("error", reveal, { once: true });
 
-export function fadeInImage(image: HTMLImageElement): void {
-  if (image.loading !== "lazy" || !("IntersectionObserver" in window)) {
-    arm(image);
-    return;
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) {
-        return;
-      }
-      observer.disconnect();
-      arm(image);
-    },
-    { rootMargin: LAZY_MARGIN },
-  );
-
-  observer.observe(image);
+  image.setAttribute("src", url);
 }

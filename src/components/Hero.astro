@@ -123,20 +123,23 @@ const proofs = [
   if (heroRoot && picked) {
     const photo = heroRoot.querySelector("[data-hero-photo]");
     if (photo) {
-      // Same "fade in only if it's slow" trick as scripts/fade-in-image.ts,
-      // repeated here because an inline script can't import. The hero loads
-      // eagerly, so it needs none of that helper's lazy-image handling.
-      const pending = setTimeout(function () {
-        photo.classList.add("oz-img-fade", "oz-img-pending");
-      }, 200);
+      // Same reveal as scripts/fade-in-image.ts, repeated because an inline
+      // script can't import. The hero ships with no src at all, so it is always
+      // blank here and none of that helper's guards apply.
+      photo.classList.add("oz-img-pending");
+      const startedAt = performance.now();
 
-      const settle = function () {
-        clearTimeout(pending);
+      const reveal = function () {
+        // Only fade if it took long enough that a hard pop would read as a
+        // glitch; anything quicker looks better appearing at once.
+        if (performance.now() - startedAt > 200) {
+          photo.classList.add("oz-img-fade");
+        }
         photo.classList.remove("oz-img-pending");
       };
 
-      photo.addEventListener("load", settle, { once: true });
-      photo.addEventListener("error", settle, { once: true });
+      photo.addEventListener("load", reveal, { once: true });
+      photo.addEventListener("error", reveal, { once: true });
 
       photo.src = picked.url;
     }

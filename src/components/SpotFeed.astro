@@ -47,7 +47,7 @@ const gridPool = landing.rotation.grid;
 )}
 
 <script>
-  import { fadeInImage } from "../scripts/fade-in-image";
+  import { swapImage } from "../scripts/fade-in-image";
 
   interface RotationOption {
     id: string;
@@ -123,8 +123,7 @@ const gridPool = landing.rotation.grid;
 
       const cover = card.querySelector<HTMLImageElement>("[data-spot-card-cover]");
       if (cover) {
-        fadeInImage(cover);
-        cover.setAttribute("src", picked.cover);
+        swapImage(cover, picked.cover);
       }
 
       card.querySelector<HTMLElement>("[data-spot-card-country]")?.replaceChildren(picked.country);
