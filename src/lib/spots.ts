@@ -806,8 +806,12 @@ async function pickPhotoPools(
   for (const slot of ["hero", "story", "cta"] as ShowcaseSlot[]) {
     // Several photos per slot so the browser can pick a different one each
     // visit; they all have to clear the same size and orientation bar.
+    //
+    // Only the first is allowed to fall back to an unmeasured photo: the
+    // section has to render something, but a rotation that quietly fills up
+    // with portrait or 7MB shots would be worse than a shorter one.
     for (let i = 0; i < ROTATION_SIZES.photo; i++) {
-      const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used);
+      const picked = await pickShowcaseImage(lang, SHOWCASE_SOURCES[slot], slot, used, i === 0);
       if (!picked) {
         break;
       }
@@ -926,6 +930,7 @@ async function pickShowcaseImage(
   spotTypes: string[],
   slot: ShowcaseSlot,
   used: Set<string>,
+  allowFallback: boolean,
 ): Promise<ShowcaseImage | null> {
   const random = rngFor(`showcase:${slot}`);
   const pool = (await showcasePool(lang)).filter(
@@ -985,8 +990,9 @@ async function pickShowcaseImage(
     }
   }
 
-  // Nothing measured up — fall back to whatever the best candidate offers.
-  return candidates[0] ? credited(candidates[0]) : null;
+  // Nothing measured up — fall back to whatever the best candidate offers,
+  // but only when the slot would otherwise be empty.
+  return allowFallback && candidates[0] ? credited(candidates[0]) : null;
 }
 
 /** The app's in-card carousel shows at most four media items. */

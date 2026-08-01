@@ -281,6 +281,18 @@ const rows = [
     const mediaCountOf = (panel: HTMLElement) =>
       Math.max(panel.querySelectorAll(".feed-image").length, 1);
 
+    // The twelve spots are fixed at build time, but their order is drawn here so
+    // the demo opens on a different spot every visit, like the rest of the page.
+    // Reordering before the clone below keeps the wrap pointing at whichever
+    // panel ended up first.
+    for (let i = panels.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const swap = panels[i]!;
+      panels[i] = panels[j]!;
+      panels[j] = swap;
+    }
+    panels.forEach((panel) => column.appendChild(panel));
+
     // Seamless wrap: a copy of the first spot is parked after the last one, so
     // the feed keeps scrolling downwards instead of rewinding to the top.
     const loopClone = panels[0].cloneNode(true) as HTMLElement;

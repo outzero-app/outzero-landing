@@ -4,6 +4,7 @@
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { inlineJson } from "../lib/inline-json";
 import { fetchLandingSpots } from "../lib/spots";
 import PhotoCredit from "./PhotoCredit.astro";
 
@@ -43,67 +44,24 @@ const storyPoolForClient =
       <p class="story-copy" set:html={strings.about_paragraph_2_html}></p>
     </div>
 
+    {/* The src is server-rendered so the page still works without JS. This
+        section sits well below the fold, so the lazy image has not started
+        loading by the time the rotation script swaps it. */}
     {photo && (
       <div class="story-photo-wrap">
-        <img alt="" class="story-photo" data-story-photo loading="lazy" style="opacity:0;transition:opacity 0.5s ease;" />
-        <noscript>
-          <img src={photo.url} alt="" class="story-photo" loading="lazy" />
-        </noscript>
+        <img src={photo.url} alt="" class="story-photo" data-story-photo loading="lazy" />
         <PhotoCredit image={photo} locale={locale} placement="bottom-left" />
       </div>
     )}
   </div>
 </section>
 
-<script type="application/json" data-story-rotation set:html={JSON.stringify(storyPoolForClient)}></script>
+<script type="application/json" data-story-rotation set:html={inlineJson(storyPoolForClient)}></script>
 
 <script>
-  interface RotationPhoto {
-    id: string;
-    name: string;
-    url: string;
-    author?: string;
-  }
+  import { rotatePhoto } from "../scripts/rotate-photo";
 
-  function randomItem<T>(items: T[]): T | null {
-    if (items.length === 0) {
-      return null;
-    }
-    return items[Math.floor(Math.random() * items.length)] ?? null;
-  }
-
-  const root = document.querySelector<HTMLElement>("[data-story-root]");
-  const rotationNode = document.querySelector<HTMLScriptElement>("[data-story-rotation]");
-  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
-  const picked = randomItem(pool);
-
-  if (root && picked) {
-    const photo = root.querySelector<HTMLImageElement>("[data-story-photo]");
-    if (photo) {
-      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
-      photo.setAttribute("src", picked.url);
-    }
-
-    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
-    if (credit) {
-      credit.href = `https://web.outzero.app/spot/${picked.id}`;
-      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
-
-      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
-      if (picked.author) {
-        if (existingAuthor) {
-          existingAuthor.replaceChildren(picked.author);
-        } else {
-          const author = document.createElement("span");
-          author.className = "photo-credit-author";
-          author.textContent = picked.author;
-          credit.appendChild(author);
-        }
-      } else if (existingAuthor) {
-        existingAuthor.remove();
-      }
-    }
-  }
+  rotatePhoto("[data-story-root]", "[data-story-rotation]", "[data-story-photo]");
 </script>
 
 <style>

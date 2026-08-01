@@ -4,6 +4,7 @@
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { inlineJson } from "../lib/inline-json";
 import { fetchLandingSpots } from "../lib/spots";
 import PhotoCredit from "./PhotoCredit.astro";
 
@@ -34,14 +35,10 @@ const ctaPoolForClient =
 <section class="page-section" data-cta-root aria-labelledby="cta-title">
   <div class="oz-container">
     <div class="cta-panel">
-      {photo && (
-        <>
-          <img alt="" class="cta-photo" data-cta-photo loading="lazy" style="opacity:0;transition:opacity 0.5s ease;" />
-          <noscript>
-            <img src={photo.url} alt="" class="cta-photo" loading="lazy" />
-          </noscript>
-        </>
-      )}
+      {/* Server-rendered src so it works without JS; the panel is the last
+          thing on the page, so the lazy image has not been requested yet by the
+          time the rotation script swaps it. */}
+      {photo && <img src={photo.url} alt="" class="cta-photo" data-cta-photo loading="lazy" />}
       <div class="cta-overlay" aria-hidden="true"></div>
       {photo && <PhotoCredit image={photo} locale={locale} />}
 
@@ -57,55 +54,12 @@ const ctaPoolForClient =
   </div>
 </section>
 
-<script type="application/json" data-cta-rotation set:html={JSON.stringify(ctaPoolForClient)}></script>
+<script type="application/json" data-cta-rotation set:html={inlineJson(ctaPoolForClient)}></script>
 
 <script>
-  interface RotationPhoto {
-    id: string;
-    name: string;
-    url: string;
-    author?: string;
-  }
+  import { rotatePhoto } from "../scripts/rotate-photo";
 
-  function randomItem<T>(items: T[]): T | null {
-    if (items.length === 0) {
-      return null;
-    }
-    return items[Math.floor(Math.random() * items.length)] ?? null;
-  }
-
-  const root = document.querySelector<HTMLElement>("[data-cta-root]");
-  const rotationNode = document.querySelector<HTMLScriptElement>("[data-cta-rotation]");
-  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
-  const picked = randomItem(pool);
-
-  if (root && picked) {
-    const photo = root.querySelector<HTMLImageElement>("[data-cta-photo]");
-    if (photo) {
-      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
-      photo.setAttribute("src", picked.url);
-    }
-
-    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
-    if (credit) {
-      credit.href = `https://web.outzero.app/spot/${picked.id}`;
-      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
-
-      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
-      if (picked.author) {
-        if (existingAuthor) {
-          existingAuthor.replaceChildren(picked.author);
-        } else {
-          const author = document.createElement("span");
-          author.className = "photo-credit-author";
-          author.textContent = picked.author;
-          credit.appendChild(author);
-        }
-      } else if (existingAuthor) {
-        existingAuthor.remove();
-      }
-    }
-  }
+  rotatePhoto("[data-cta-root]", "[data-cta-rotation]", "[data-cta-photo]");
 </script>
 
 <style>

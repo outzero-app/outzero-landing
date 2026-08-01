@@ -6,6 +6,7 @@
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { inlineJson } from "../lib/inline-json";
 import {
   countryDisplayName,
   fetchLandingSpots,
@@ -94,9 +95,9 @@ const tilePools = landing.rotation.tiles;
       })}
     </div>
   </div>
-</section>
 
-<script type="application/json" data-spot-types-rotation set:html={JSON.stringify(tilePools)}></script>
+  <script type="application/json" data-spot-types-rotation set:html={inlineJson(tilePools)}></script>
+</section>
 
 <script>
   // Pointer devices reveal a tile on hover, handled entirely in CSS. This

@@ -29,7 +29,10 @@ const strings = t(locale);
 >
   <span class="photo-credit-label">{strings.photo_credit_prefix}</span>
   <span class="photo-credit-name">{image.name}</span>
-  {image.authorHandle && <span class="photo-credit-author">{image.authorHandle}</span>}
+  {/* Always in the DOM, hidden when the author is unknown: the photo rotates
+      client-side, and a span created with createElement would miss Astro's
+      scoping attribute and lose these styles. */}
+  <span class="photo-credit-author" hidden={!image.authorHandle}>{image.authorHandle ?? ""}</span>
 </a>
 
 <style>

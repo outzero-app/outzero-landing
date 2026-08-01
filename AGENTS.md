@@ -195,6 +195,39 @@ The three editorial photos are credited with `PhotoCredit.astro`, which links ba
 `ShowcaseImage` carries the spot id, its localized name and the author handle — that's why the
 showcase pool is cached per locale.
 
+### Rotation: a different line-up on every page load
+
+A daily rebuild is the only time new spots enter the site, but visitors shouldn't see the same page
+all day. So each picker builds a **pool** rather than a single pick, and `LandingSpots.rotation`
+ships it to the browser as a JSON block; a small script draws from it on load. No Firebase call
+happens at runtime and there is no per-visit cost.
+
+| Slot | Pool | Drawn client-side |
+|------|------|-------------------|
+| Category tiles | 4 per category | one per tile |
+| Feed grid | 24 candidates | 8, re-running the country/type variety passes |
+| Hero / story / CTA | 6 photos each | one, plus its credit text and link |
+| Phone demo | the same 12 spots | their order is shuffled, so it opens on a different spot |
+
+Rules when touching this:
+
+- **Pools are disjoint.** They come out of the same `used` set as everything else, so whatever the
+  browser draws, no spot can land in two sections.
+- **The server renders the first of each pool** and the script swaps it. That keeps the page working
+  without JS and gives the swap something to replace.
+- **The hero is the exception.** Its `<img>` ships *without* a `src` and gets one from an
+  `is:inline define:vars` script placed right after `</header>`, because it's the LCP element: a
+  server-rendered src would be downloaded and then thrown away, and a bundled module script only
+  runs once the whole document is parsed. Everything else is `loading="lazy"` and far below the
+  fold, so it is swapped long before the browser asks for it.
+- **Never hide a section until the script has run.** An `opacity: 0` waiting on JS means one thrown
+  exception leaves the section blank.
+- **Don't `createElement` inside `PhotoCredit`.** Astro's scoped styles key off a `data-astro-cid-*`
+  attribute that a script-created element won't have, so it renders unstyled. The author `<span>` is
+  always in the markup and just gets `hidden` toggled.
+- **Embed pool JSON with `inlineJson()`** (`src/lib/inline-json.ts`), which escapes `<`. A spot name
+  containing `</script>` would otherwise close the tag and break the page.
+
 Rules when touching this layer:
 
 - **Every fetch must degrade gracefully.** A failure logs a warning and returns `null`/`[]`; the

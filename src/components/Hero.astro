@@ -16,6 +16,7 @@ interface Props {
 const { locale, showBadges = true } = Astro.props;
 const strings = t(locale);
 
+
 const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero.app";
 const exploreUrl = "https://web.outzero.app/explore";
@@ -49,7 +50,11 @@ const proofs = [
 <header id="hero" class="hero" data-hero-root>
   {backdrop && (
     <>
-      <img alt="" class="hero-photo" data-hero-photo fetchpriority="high" style="opacity:0;transition:opacity 0.5s ease;" />
+      {/* No `src` in the markup on purpose. The backdrop is drawn from the
+          rotation pool by the inline script below, and a server-rendered src
+          would make the browser download a photo it is about to replace —
+          expensive for what is the page's LCP element. */}
+      <img alt="" class="hero-photo" data-hero-photo fetchpriority="high" />
       <noscript>
         <img src={backdrop.url} alt="" class="hero-photo" fetchpriority="high" />
       </noscript>
@@ -104,52 +109,36 @@ const proofs = [
   {backdrop && <PhotoCredit image={backdrop} locale={locale} />}
 </header>
 
-<script type="application/json" data-hero-rotation set:html={JSON.stringify(heroPoolForClient)}></script>
+{/*
+  Inline and synchronous, immediately after the markup it touches: a bundled
+  module script would only run once the whole document had been parsed, and the
+  hero photo cannot start downloading until it has a src. Everything it needs is
+  in `define:vars`, so it makes no requests of its own.
+*/}
+<script is:inline define:vars={{ heroPool: heroPoolForClient }}>
+  const picked =
+    heroPool.length > 0 ? heroPool[Math.floor(Math.random() * heroPool.length)] : null;
+  const heroRoot = document.querySelector("[data-hero-root]");
 
-<script>
-  interface RotationPhoto {
-    id: string;
-    name: string;
-    url: string;
-    author?: string;
-  }
-
-  function randomItem<T>(items: T[]): T | null {
-    if (items.length === 0) {
-      return null;
-    }
-    return items[Math.floor(Math.random() * items.length)] ?? null;
-  }
-
-  const root = document.querySelector<HTMLElement>("[data-hero-root]");
-  const rotationNode = document.querySelector<HTMLScriptElement>("[data-hero-rotation]");
-  const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationPhoto[] : [];
-  const picked = randomItem(pool);
-
-  if (root && picked) {
-    const photo = root.querySelector<HTMLImageElement>("[data-hero-photo]");
+  if (heroRoot && picked) {
+    const photo = heroRoot.querySelector("[data-hero-photo]");
     if (photo) {
-      photo.addEventListener("load", () => { photo.style.opacity = "1"; }, { once: true });
       photo.src = picked.url;
     }
 
-    const credit = root.querySelector<HTMLAnchorElement>(".photo-credit");
+    const credit = heroRoot.querySelector(".photo-credit");
     if (credit) {
-      credit.href = `https://web.outzero.app/spot/${picked.id}`;
-      credit.querySelector<HTMLElement>(".photo-credit-name")?.replaceChildren(picked.name);
+      credit.href = "https://web.outzero.app/spot/" + picked.id;
 
-      const existingAuthor = credit.querySelector<HTMLElement>(".photo-credit-author");
-      if (picked.author) {
-        if (existingAuthor) {
-          existingAuthor.replaceChildren(picked.author);
-        } else {
-          const author = document.createElement("span");
-          author.className = "photo-credit-author";
-          author.textContent = picked.author;
-          credit.appendChild(author);
-        }
-      } else if (existingAuthor) {
-        existingAuthor.remove();
+      const name = credit.querySelector(".photo-credit-name");
+      if (name) {
+        name.textContent = picked.name;
+      }
+
+      const author = credit.querySelector(".photo-credit-author");
+      if (author) {
+        author.textContent = picked.author || "";
+        author.hidden = !picked.author;
       }
     }
   }
