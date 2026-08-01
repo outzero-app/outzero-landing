@@ -1,0 +1,79 @@
+---
+/**
+ * "El feed" — a 4x2 rectangle of real, verified spots pulled from Firebase at
+ * build time, picked for country and spot-type variety. Each card links out to
+ * the spot on the web app.
+ */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+import { fetchLandingSpots } from "../lib/spots";
+import SpotCard from "./SpotCard.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
+const feedSpots = (await fetchLandingSpots(locale)).grid;
+---
+
+{feedSpots.length > 0 && (
+  <section id="feed" class="page-section" aria-labelledby="feed-title">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="feed-header">
+        <div class="section-intro section-intro--left">
+          <p class="section-kicker">{strings.feed_label}</p>
+          <h2 id="feed-title" class="section-title max-w-[18ch]">{strings.feed_title}</h2>
+        </div>
+        <p class="feed-support-copy">{strings.feed_subtitle}</p>
+      </div>
+
+      <div class="feed-grid">
+        {feedSpots.map((spot) => (
+          <SpotCard spot={spot} locale={locale} />
+        ))}
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .feed-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 44px;
+  }
+
+  .feed-support-copy {
+    max-width: 340px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  /* Fixed column counts keep the 8 cards a clean rectangle (4x2 on desktop,
+     2x4 on tablet) instead of the ragged 5+3 an auto-fill grid produces. */
+  .feed-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+
+  @media (max-width: 1024px) {
+    .feed-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .feed-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

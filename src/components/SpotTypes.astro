@@ -1,11 +1,12 @@
 ---
 /**
- * Spot types showcase — flowing inline layout, no cards, no links.
- * Icons and labels displayed in a clean, organic horizontal flow
- * with subtle separators.
+ * Spot types — the 12 real SpotType categories as tiles that flip in 3D to
+ * reveal a real verified spot of that type (fetched at build time). A second
+ * click opens that spot on the web app.
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { countryDisplayName, fetchLandingSpots, spotUrl, TILE_SPOT_TYPES } from "../lib/spots";
 
 interface Props {
   locale: Locale;
@@ -14,63 +15,310 @@ interface Props {
 const { locale } = Astro.props;
 const strings = t(locale);
 
-const spotTypes = [
-  { icon: "/icons/spots/surf.svg", name: strings.spot_surf },
-  { icon: "/icons/spots/beach.svg", name: strings.spot_beach },
-  { icon: "/icons/spots/summit.svg", name: strings.spot_summit },
-  { icon: "/icons/spots/viewpoint.svg", name: strings.spot_viewpoint },
-  { icon: "/icons/spots/cliff_jumping.svg", name: strings.spot_cliff_jumping },
-  { icon: "/icons/spots/waterfall.svg", name: strings.spot_waterfalls },
-  { icon: "/icons/spots/lake.svg", name: strings.spot_lake },
-  { icon: "/icons/spots/natural_pools.svg", name: strings.spot_natural_pools },
-  { icon: "/icons/spots/caves.svg", name: strings.spot_caves },
-  { icon: "/icons/spots/diving.svg", name: strings.spot_diving },
-  { icon: "/icons/spots/adventure.svg", name: strings.spot_adventure },
-];
+const revealSpots = (await fetchLandingSpots(locale)).tiles;
 ---
 
 <section id="spot-types" class="page-section" aria-labelledby="spot-types-title">
-  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+  <div class="oz-container">
     <div class="section-intro section-intro--center">
-      <p class="section-kicker">{strings.spot_types_label}</p>
-      <h2 id="spot-types-title" class="section-title max-w-[14ch]">
+      <p class="section-kicker section-kicker--both">{strings.spot_types_label}</p>
+      <h2 id="spot-types-title" class="section-title max-w-[16ch]">
         {strings.spot_types_title}
       </h2>
-      <p class="section-copy max-w-2xl">
+      <p class="section-copy max-w-[640px]">
         {strings.spot_types_subtitle}
       </p>
     </div>
 
-    <ul class="mx-auto mt-14 flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-4 sm:gap-x-8" role="list">
-      {spotTypes.map((spot) => (
-        <li>
-          <div class="spot-type-item inline-flex items-center gap-2.5">
-            <img
-              src={spot.icon}
-              alt=""
-              class="spot-icon h-5 w-5 sm:h-6 sm:w-6"
-              loading="lazy"
-              aria-hidden="true"
-            />
-            <span
-              class="text-sm font-semibold sm:text-base"
-              style="color: var(--text-primary);"
-            >
-              {spot.name}
-            </span>
+    <div class="oz-types">
+      {TILE_SPOT_TYPES.map((type, index) => {
+        const spot = revealSpots[index];
+        const label = strings[type.i18nKey];
+
+        return (
+          <div
+            class="flip-tile"
+            data-flip-tile
+            data-flippable={spot ? "true" : "false"}
+            tabindex={spot ? 0 : undefined}
+            role={spot ? "button" : undefined}
+            aria-pressed={spot ? "false" : undefined}
+            aria-label={spot ? `${label}: ${spot.translation.name}` : label}
+          >
+            <div class="flip-inner">
+              <div class="flip-face flip-front">
+                <span
+                  class="oz-icon-mask oz-icon-mask--green type-icon"
+                  style={`--icon-url: url("/icons/spots/${type.icon}.svg");`}
+                  aria-hidden="true"
+                ></span>
+                <span class="type-label">{label}</span>
+              </div>
+
+              {spot && (
+                <div class="flip-face flip-back">
+                  <img src={spot.coverUrl} alt="" class="back-img" loading="lazy" />
+                  <div class="back-scrim" aria-hidden="true"></div>
+                  <span class="back-country">{countryDisplayName(spot.countryCode, locale)}</span>
+                  <div class="back-info">
+                    <span class="back-title">{spot.translation.name}</span>
+                    <span class="back-type">{label}</span>
+                  </div>
+                  {/* A real link rather than window.open, which pop-up blockers
+                      swallow. Inert until the tile is flipped. */}
+                  <a
+                    class="back-link"
+                    href={spotUrl(spot.id)}
+                    target="_blank"
+                    rel="noopener"
+                    tabindex="-1"
+                    aria-label={spot.translation.name}
+                  ></a>
+                </div>
+              )}
+            </div>
           </div>
-        </li>
-      ))}
-    </ul>
+        );
+      })}
+    </div>
   </div>
 </section>
 
-<style>
-  .spot-type-item {
-    transition: opacity 0.2s ease;
+<script>
+  // Only one tile is ever revealed, and it flips back on its own so the grid
+  // returns to a clean state.
+  const AUTO_CLOSE_MS = 5000;
+
+  let openTile: HTMLElement | null = null;
+  let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function close(tile: HTMLElement | null) {
+    if (!tile) {
+      return;
+    }
+
+    tile.classList.remove("is-flipped");
+    tile.setAttribute("aria-pressed", "false");
+    tile.querySelector<HTMLAnchorElement>(".back-link")?.setAttribute("tabindex", "-1");
   }
 
-  .spot-type-item:hover {
-    opacity: 0.72;
+  // First activation flips the tile; from then on the anchor covering the back
+  // face handles opening the spot, so no pop-up blocker can get in the way.
+  function flip(tile: HTMLElement) {
+    if (tile.dataset.flippable !== "true" || tile.classList.contains("is-flipped")) {
+      return;
+    }
+
+    if (closeTimer != null) {
+      clearTimeout(closeTimer);
+    }
+
+    close(openTile);
+
+    tile.classList.add("is-flipped");
+    tile.setAttribute("aria-pressed", "true");
+    tile.querySelector<HTMLAnchorElement>(".back-link")?.removeAttribute("tabindex");
+    openTile = tile;
+
+    closeTimer = setTimeout(() => {
+      close(tile);
+      if (openTile === tile) {
+        openTile = null;
+      }
+    }, AUTO_CLOSE_MS);
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-flip-tile]").forEach((tile) => {
+    tile.addEventListener("click", () => flip(tile));
+    tile.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        // Once flipped, Enter should follow the link instead of re-flipping.
+        if (!tile.classList.contains("is-flipped")) {
+          event.preventDefault();
+          flip(tile);
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  /* 11 categories, all the same size, laid out 4 / 3 / 4 with the short middle
+     row centred so the block stays symmetrical. The 24-column track exists
+     only so that middle row can start on a half-column offset. */
+  .oz-types {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 14px;
+    margin-top: 52px;
+  }
+
+  .flip-tile {
+    grid-column: span 6;
+  }
+
+  .flip-tile:nth-child(5) {
+    grid-column: 4 / span 6;
+  }
+
+  @media (max-width: 880px) {
+    /* Two per row, with the odd one out centred. */
+    .oz-types {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .flip-tile,
+    .flip-tile:nth-child(5) {
+      grid-column: span 2;
+    }
+
+    .flip-tile:last-child {
+      grid-column: 2 / span 2;
+    }
+  }
+
+  .flip-tile {
+    perspective: 1200px;
+    /* The lift lives on the perspective element so it never competes with the
+       rotateY on .flip-inner. */
+    transition: transform 0.25s var(--ease-out);
+  }
+
+  .flip-tile[role="button"] {
+    cursor: pointer;
+  }
+
+  .flip-tile[role="button"]:hover {
+    transform: translateY(-4px);
+  }
+
+  .flip-inner {
+    position: relative;
+    height: 100%;
+    transition: transform 0.6s var(--ease-out);
+    transform-style: preserve-3d;
+  }
+
+  .flip-tile.is-flipped .flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Opacity is the fallback for engines that ignore backface-visibility
+       inside a preserve-3d subtree, so a face is never shown mirrored. */
+    transition: opacity 0.3s linear;
+  }
+
+  .flip-front {
+    position: relative;
+    min-height: 120px;
+    height: 100%;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    transition: background var(--duration-base), opacity 0.3s linear;
+  }
+
+  .flip-tile[role="button"]:hover .flip-front {
+    background: color-mix(in srgb, var(--surface) 80%, var(--color-brand-green));
+  }
+
+  .flip-tile.is-flipped .flip-front {
+    opacity: 0;
+  }
+
+  .type-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .type-label {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--text-primary);
+  }
+
+  .flip-back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .flip-tile.is-flipped .flip-back {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .back-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+
+  .back-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .back-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.1) 60%, rgba(0, 0, 0, 0.4) 100%);
+  }
+
+  .back-country {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-green);
+  }
+
+  .back-info {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .back-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.2px;
+    color: var(--color-primary-white);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+  }
+
+  .back-type {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-green);
   }
 </style>

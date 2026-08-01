@@ -1,0 +1,969 @@
+---
+/**
+ * "Así funciona" — copy on the left, and on the right a phone mockup that
+ * reproduces the app's home feed. It plays by itself: every few seconds it
+ * advances to the spot's next photo, and once a spot runs out of photos it
+ * scrolls down to the next one, looping back to the start at the end.
+ * Clicking a spot opens it on the web app.
+ */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+import {
+  countryDisplayName,
+  fetchLandingSpots,
+  formatCount,
+  spotTypeDefinition,
+  spotTypeLabelSingular,
+  spotUrl,
+} from "../lib/spots";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
+const landing = await fetchLandingSpots(locale);
+const miniFeedSpots = landing.miniFeed;
+// The account tab shows the signed-in user's photo in the real app; here it
+// borrows a random spot thumbnail so it isn't an empty circle.
+const accountAvatar = landing.accountAvatar;
+
+const rows = [
+  { icon: "ui/satellite", title: strings.preview_map_title, desc: strings.preview_map_desc },
+  { icon: "navigation/eye", title: strings.preview_media_title, desc: strings.preview_media_desc },
+  { icon: "navigation/route", title: strings.preview_routes_title, desc: strings.preview_routes_desc },
+];
+---
+
+{miniFeedSpots.length > 0 && (
+  <section class="preview-section">
+    <div class="oz-preview-grid">
+      <div>
+        <p class="section-kicker">{strings.preview_label}</p>
+        <h2 class="preview-title">{strings.preview_title}</h2>
+        <p class="preview-copy">{strings.preview_subtitle}</p>
+
+        <div class="preview-rows">
+          {rows.map((row) => (
+            <div class="preview-row">
+              <span class="preview-row-chip">
+                <span
+                  class="oz-icon-mask oz-icon-mask--green preview-row-icon"
+                  style={`--icon-url: url("/icons/${row.icon}.svg");`}
+                  aria-hidden="true"
+                ></span>
+              </span>
+              <div>
+                <h3 class="preview-row-title">{row.title}</h3>
+                <p class="preview-row-desc">{row.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-screen">
+            <div class="phone-chrome">
+              <div class="phone-header">
+                <img src="/images/outzero_logo_white.svg" alt="Outzero" class="phone-logo" />
+                <div class="phone-header-icons">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.7 21a2 2 0 0 1-3.4 0"></path>
+                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="M21 21l-4.3-4.3"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="phone-tabs">
+                <div class="phone-tab phone-tab--active">
+                  <span>{strings.preview_tab_for_you}</span>
+                  <span class="phone-tab-underline" aria-hidden="true"></span>
+                </div>
+                <span class="phone-filter-box">
+                  <img src="/icons/ui/filter.svg" alt="" class="spot-icon phone-filter" aria-hidden="true" />
+                </span>
+                <div class="phone-tab">
+                  <span>{strings.preview_tab_following}</span>
+                  <span class="phone-tab-underline phone-tab-underline--idle" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-feed" data-mini-feed>
+              <div class="feed-column" data-feed-column>
+                {miniFeedSpots.map((spot) => {
+                  const typeDef = spotTypeDefinition(spot.spotType);
+                  const typeLabel = spotTypeLabelSingular(spot.spotType, strings);
+                  const gallery = spot.gallery ?? [{ url: spot.coverUrl, fit: "contain" as const }];
+
+                  return (
+                    <div class="feed-panel" data-feed-panel>
+                      <div class="feed-media" data-feed-media>
+                        {gallery.map((image, mediaIndex) => (
+                          <img
+                            src={image.url}
+                            alt=""
+                            class={`feed-image feed-image--${image.fit}`}
+                            loading={mediaIndex === 0 ? "eager" : "lazy"}
+                          />
+                        ))}
+                      </div>
+                      <div class="feed-scrim" aria-hidden="true"></div>
+
+                      <div class="mini-overlay">
+                        {typeDef && (
+                          <span class="mini-pill">
+                            <span
+                              class="oz-icon-mask oz-icon-mask--green mini-pill-icon"
+                              style={`--icon-url: url("/icons/spots/${typeDef.icon}.svg");`}
+                              aria-hidden="true"
+                            ></span>
+                            <span class="mini-pill-label">{typeLabel}</span>
+                          </span>
+                        )}
+
+                        <h4 class="mini-title">{spot.translation.name}</h4>
+
+                        <div class="mini-location">
+                          <span
+                            class="oz-icon-mask mini-location-icon"
+                            style='--icon-url: url("/icons/navigation/location.svg");'
+                            aria-hidden="true"
+                          ></span>
+                          <span>{countryDisplayName(spot.countryCode, locale)}</span>
+                        </div>
+
+                        {spot.authorHandle && (
+                          <div class="mini-author">
+                            {spot.authorAvatar ? (
+                              <img
+                                src={spot.authorAvatar}
+                                alt=""
+                                class="mini-avatar"
+                                loading="lazy"
+                                referrerpolicy="no-referrer"
+                              />
+                            ) : (
+                              <span class="mini-avatar mini-avatar--initial" aria-hidden="true">
+                                {spot.authorHandle.replace("@", "").charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                            <span class="mini-handle">{spot.authorHandle}</span>
+                          </div>
+                        )}
+
+                        {gallery.length > 1 && (
+                          <div class="mini-dots" data-feed-dots aria-hidden="true">
+                            {gallery.map(() => <span class="mini-dot"></span>)}
+                          </div>
+                        )}
+
+                        <div class="mini-actions">
+                          <span class="mini-action">
+                            <img src="/icons/navigation/eye.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
+                            <span class="mini-action-count">{formatCount(spot.viewCount)}</span>
+                          </span>
+                          <span class="mini-action">
+                            <img src="/icons/ui/like.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
+                            <span class="mini-action-count">{formatCount(spot.likesCount)}</span>
+                          </span>
+                          <span class="mini-action">
+                            <img src="/icons/ui/send.svg" alt="" class="spot-icon mini-action-icon" aria-hidden="true" />
+                            <span class="mini-action-count">{formatCount(spot.shareCount)}</span>
+                          </span>
+                          <span class="mini-action-divider" aria-hidden="true"></span>
+                          <span class="mini-map">
+                            <span
+                              class="oz-icon-mask oz-icon-mask--green mini-map-icon"
+                              style='--icon-url: url("/icons/navigation/location.svg");'
+                              aria-hidden="true"
+                            ></span>
+                            <span>{strings.preview_view_on_map}</span>
+                            <span class="mini-map-chevron" aria-hidden="true">›</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* A real link rather than window.open, which pop-up
+                          blockers swallow. Covers the whole spot area. */}
+                      <a
+                        class="panel-link"
+                        href={spotUrl(spot.id)}
+                        target="_blank"
+                        rel="noopener"
+                        aria-label={spot.translation.name}
+                      ></a>
+                    </div>
+                  );
+                })}
+
+                <div class="feed-panel feed-panel--end" data-feed-panel>
+                  <div class="mini-end-inner">
+                    <h4 class="mini-end-title">{strings.mini_feed_end_title}</h4>
+                    <p class="mini-end-body">{strings.mini_feed_end_body}</p>
+                    <span class="mini-end-cta">{strings.mini_feed_end_cta} →</span>
+                  </div>
+                  <a
+                    class="panel-link"
+                    href="https://web.outzero.app"
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={strings.mini_feed_end_cta}
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-nav">
+              <div class="nav-item">
+                <span class="oz-icon-mask oz-icon-mask--green nav-icon" style='--icon-url: url("/icons/navigation/home_active.svg");' aria-hidden="true"></span>
+                <span class="nav-label nav-label--active">{strings.preview_nav_home}</span>
+              </div>
+              <div class="nav-item">
+                <img src="/icons/navigation/explore.svg" alt="" class="spot-icon nav-icon nav-icon--idle" aria-hidden="true" />
+                <span class="nav-label">{strings.preview_nav_explore}</span>
+              </div>
+              <div class="nav-slot" aria-hidden="true"></div>
+              <div class="nav-item">
+                <img src="/icons/navigation/route.svg" alt="" class="spot-icon nav-icon nav-icon--idle" aria-hidden="true" />
+                <span class="nav-label">{strings.preview_nav_trips}</span>
+              </div>
+              <div class="nav-item">
+                {accountAvatar ? (
+                  <img src={accountAvatar} alt="" class="nav-avatar" loading="lazy" />
+                ) : (
+                  <span class="nav-avatar" aria-hidden="true"></span>
+                )}
+                <span class="nav-label">{strings.preview_nav_account}</span>
+              </div>
+              <div class="nav-fab" aria-hidden="true">
+                <img src="/icons/ui/add.svg" alt="" class="nav-fab-icon" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+
+<script>
+  // Irregular on purpose: a fixed metronome reads as a slideshow, whereas a
+  // real person lingers on some photos and skips past others.
+  const DWELL_MIN_MS = 1100;
+  const DWELL_MAX_MS = 2500;
+  /** Odds of moving on to the next spot instead of the next photo. */
+  const SKIP_TO_NEXT_SPOT_CHANCE = 0.28;
+
+  function setupMiniFeed(root: HTMLElement) {
+    const column = root.querySelector<HTMLElement>("[data-feed-column]");
+    const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-feed-panel]"));
+
+    if (!column || panels.length === 0) {
+      return;
+    }
+
+    const mediaCountOf = (panel: HTMLElement) =>
+      Math.max(panel.querySelectorAll(".feed-image").length, 1);
+
+    let panelIndex = 0;
+    let mediaIndex = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const render = () => {
+      column.style.transform = `translateY(-${panelIndex * 100}%)`;
+
+      panels.forEach((panel, i) => {
+        const media = panel.querySelector<HTMLElement>("[data-feed-media]");
+        // Only the visible panel keeps its carousel position; the rest rewind
+        // so a spot always starts on its first photo.
+        const activeMedia = i === panelIndex ? mediaIndex : 0;
+
+        if (media) {
+          media.style.transform = `translateX(-${activeMedia * 100}%)`;
+        }
+
+        panel
+          .querySelectorAll<HTMLElement>("[data-feed-dots] .mini-dot")
+          .forEach((dot, dotIndex) => {
+            dot.classList.toggle("is-active", dotIndex === activeMedia);
+          });
+      });
+    };
+
+    const advance = () => {
+      const lastMedia = mediaCountOf(panels[panelIndex]) - 1;
+      // Sometimes move on before seeing every photo, the way a real user would.
+      const skipAhead = Math.random() < SKIP_TO_NEXT_SPOT_CHANCE;
+
+      if (mediaIndex < lastMedia && !skipAhead) {
+        mediaIndex += 1;
+      } else {
+        mediaIndex = 0;
+        panelIndex = (panelIndex + 1) % panels.length;
+      }
+
+      render();
+      schedule();
+    };
+
+    function schedule() {
+      const dwell = DWELL_MIN_MS + Math.random() * (DWELL_MAX_MS - DWELL_MIN_MS);
+      timer = setTimeout(advance, dwell);
+    }
+
+    const start = () => {
+      if (timer == null) {
+        schedule();
+      }
+    };
+
+    const stop = () => {
+      if (timer != null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+
+    // Opening a spot is handled by the anchor covering each panel; off-screen
+    // panels are clipped by the feed, so only the visible one can be hit.
+
+    // Only runs while on screen and in a foreground tab. A reduced-motion
+    // preference must not disable the demo outright — global.css already
+    // strips the sliding transition, so the feed just cuts between spots.
+    let onScreen = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          onScreen = entry.isIntersecting;
+        }
+
+        if (onScreen && !document.hidden) {
+          start();
+        } else {
+          stop();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(root);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden || !onScreen) {
+        stop();
+      } else {
+        start();
+      }
+    });
+
+    render();
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-mini-feed]").forEach(setupMiniFeed);
+</script>
+
+<style>
+  .preview-section {
+    padding-block: clamp(72px, 10vw, 120px);
+    background: var(--splash);
+    border-block: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  }
+
+  .oz-preview-grid {
+    display: grid;
+    gap: 56px;
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 48px);
+  }
+
+  @media (max-width: 880px) {
+    .oz-preview-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .preview-title {
+    margin: 16px 0 0;
+    max-width: 14ch;
+    font-size: clamp(28px, 4.2vw, 46px);
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -1.4px;
+    color: var(--text-primary);
+  }
+
+  .preview-copy {
+    margin: 18px 0 0;
+    max-width: 520px;
+    font-size: clamp(15px, 1.4vw, 18px);
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  .preview-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 34px;
+    max-width: 480px;
+  }
+
+  .preview-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .preview-row-chip {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-brand);
+    background: color-mix(in srgb, var(--color-brand-green) 16%, var(--surface));
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preview-row-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .preview-row-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  .preview-row-desc {
+    margin: 5px 0 0;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Phone shell ---------- */
+
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .phone-frame {
+    position: relative;
+    width: 300px;
+    max-width: 100%;
+    aspect-ratio: 9 / 19;
+    background: #000;
+    border-radius: 44px;
+    padding: 11px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 26px;
+    background: #000;
+    border-radius: 0 0 16px 16px;
+    z-index: 6;
+  }
+
+  .phone-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 34px;
+    overflow: hidden;
+    /* The app's feed is always dark, independent of the site theme. */
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    /* It's a picture of an app, not an app: nothing here is selectable and the
+       only live target is the spot panel. */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .phone-chrome,
+  .phone-nav {
+    pointer-events: none;
+  }
+
+  /* Icons inside the phone must stay white/brand-green even if the site is
+     rendered in the light theme, because the screen is always black. */
+  .phone-screen :global(.spot-icon) {
+    filter: brightness(0) invert(1);
+  }
+
+  .phone-screen :global(.oz-icon-mask--green) {
+    color: var(--color-brand-green);
+  }
+
+  .phone-chrome {
+    flex: none;
+    position: relative;
+    z-index: 3;
+    /* Sits over the media so the feed starts under the tabs, as in the app. */
+    background: #000;
+  }
+
+  .phone-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 34px 16px 8px;
+  }
+
+  .phone-logo {
+    height: 14px;
+    width: auto;
+    display: block;
+    filter: brightness(0) invert(1);
+  }
+
+  .phone-header-icons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+  }
+
+  .phone-tabs {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 16px;
+    padding: 4px 16px 8px;
+  }
+
+  .phone-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .phone-tab--active {
+    color: #fff;
+  }
+
+  .phone-tab-underline {
+    width: 30px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-brand-green);
+  }
+
+  .phone-tab-underline--idle {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .phone-filter-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 18px;
+    margin-bottom: 7px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .phone-filter {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* ---------- Feed ---------- */
+
+  .mini-feed {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Vertical between spots, horizontal between a spot's photos — the two axes
+     the real feed uses. */
+  .feed-column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.4s var(--ease-out);
+  }
+
+  .feed-panel {
+    position: relative;
+    flex: 0 0 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .panel-link {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+  }
+
+  .feed-media {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.32s var(--ease-out);
+  }
+
+  .feed-image {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* As in the app: portrait shots fill the screen, wider ones are letterboxed
+     against black so nothing gets cropped. */
+  .feed-image--cover {
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .feed-image--contain {
+    object-fit: contain;
+    object-position: center 38%;
+  }
+
+  .feed-scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.88) 0%,
+      rgba(0, 0, 0, 0.35) 30%,
+      rgba(0, 0, 0, 0) 55%
+    );
+  }
+
+  /* Clears the floating nav (10px offset + 54px tall). */
+  .mini-overlay {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mini-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.59);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+  }
+
+  .mini-pill-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .mini-pill-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .mini-title {
+    margin: 12px 0 0;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.4px;
+    color: #fff;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9), 1px 1px 2px rgba(0, 0, 0, 0.9);
+  }
+
+  .mini-location {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  /* White, as in the app — the green pin is used for "Ver en mapa". */
+  .mini-location-icon {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .mini-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 13px;
+  }
+
+  .mini-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+    background: var(--color-dark-grey);
+    border: 1.6px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .mini-avatar--initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-brand-green);
+    color: #000;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .mini-handle {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  /* Sits between the author row and the action bar, where the app draws the
+     media carousel indicator. */
+  .mini-dots {
+    display: flex;
+    align-self: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+  }
+
+  .mini-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.38);
+    transition: width var(--duration-base) ease, background var(--duration-base) ease;
+  }
+
+  .mini-dot.is-active {
+    width: 18px;
+    background: #fff;
+  }
+
+  .mini-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.67);
+  }
+
+  .mini-action {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 34px;
+  }
+
+  .mini-action-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .mini-action-count {
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .mini-action-divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 5px;
+    background: rgba(255, 255, 255, 0.17);
+  }
+
+  .mini-map {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-brand-green);
+  }
+
+  .mini-map-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .mini-map-chevron {
+    font-size: 14px;
+    color: #fff;
+  }
+
+  /* ---------- End card ---------- */
+
+  .feed-panel--end {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--color-brand-green) 12%, #000), #000 70%);
+  }
+
+  .mini-end-inner {
+    padding: 0 22px 60px;
+    text-align: left;
+  }
+
+  .mini-end-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: #fff;
+  }
+
+  .mini-end-body {
+    margin: 10px 0 18px;
+    font-size: 12.5px;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .mini-end-cta {
+    display: inline-flex;
+    padding: 9px 16px;
+    border-radius: var(--radius-brand);
+    background: var(--color-brand-green);
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* ---------- Floating bottom nav ---------- */
+
+  .phone-nav {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 5;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 6px;
+    border-radius: 24px;
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: 0 14px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .nav-item,
+  .nav-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-icon--idle {
+    opacity: 0.6;
+  }
+
+  .nav-label {
+    font-size: 7.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.67);
+  }
+
+  .nav-label--active {
+    font-weight: 600;
+    color: var(--color-brand-green);
+  }
+
+  .nav-fab {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--color-brand-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(205, 250, 177, 0.35), 0 0 0 5px #000;
+  }
+
+  .nav-fab-icon {
+    width: 20px;
+    height: 20px;
+    filter: brightness(0);
+  }
+
+  .nav-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-dark-grey);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+</style>

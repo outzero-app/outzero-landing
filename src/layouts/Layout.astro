@@ -88,48 +88,58 @@ const structuredData = JSON.stringify([
     <link rel="shortcut icon" href={faviconIcoUrl} />
     <link rel="apple-touch-icon" href={appleTouchIconUrl} sizes="180x180" />
     <link rel="manifest" href={manifestUrl} />
-    {
-      shouldAutoRedirect && (
-        <script is:inline>
-          const STORAGE_KEY = "outzero-locale";
-          const currentPath = window.location.pathname;
-          if (currentPath === "/" || currentPath === "/index.html") {
-            const getSavedLocale = () => {
-              try {
-                return window.localStorage.getItem(STORAGE_KEY);
-              } catch {
-                return null;
-              }
-            };
+    <script is:inline define:vars={{ shouldAutoRedirect }}>
+      // Runs on every page, before anything renders.
+      //
+      // An explicit `?lang=` always wins and is persisted immediately: the
+      // language switcher carries the choice in the URL rather than relying on
+      // a click handler, so picking a language can never be undone by the
+      // auto-redirect below racing a not-yet-hydrated listener.
+      const STORAGE_KEY = "outzero-locale";
 
-            const saveLocale = (value) => {
-              try {
-                window.localStorage.setItem(STORAGE_KEY, value);
-              } catch {
-                return;
-              }
-            };
+      const saveLocale = (value) => {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, value);
+        } catch {
+          /* private mode — fall through, the URL still decided the language */
+        }
+      };
 
-            const savedLocale = getSavedLocale();
-            if (savedLocale === "es") {
-              window.location.replace("/es/");
-            } else if (savedLocale !== "en") {
-              const browserLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
+      const requestedLocale = new URLSearchParams(window.location.search).get("lang");
+
+      if (requestedLocale === "en" || requestedLocale === "es") {
+        saveLocale(requestedLocale);
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState(null, "", cleanUrl);
+      } else if (shouldAutoRedirect) {
+        const currentPath = window.location.pathname;
+        if (currentPath === "/" || currentPath === "/index.html") {
+          let savedLocale = null;
+          try {
+            savedLocale = window.localStorage.getItem(STORAGE_KEY);
+          } catch {
+            savedLocale = null;
+          }
+
+          if (savedLocale === "es") {
+            window.location.replace("/es/");
+          } else if (savedLocale !== "en") {
+            const browserLanguages =
+              Array.isArray(navigator.languages) && navigator.languages.length > 0
                 ? navigator.languages
                 : [navigator.language];
-              const prefersSpanish = browserLanguages.some(
-                (language) => typeof language === "string" && /(^es\b)|(-ES\b)/i.test(language)
-              );
+            const prefersSpanish = browserLanguages.some(
+              (language) => typeof language === "string" && /(^es\b)|(-ES\b)/i.test(language),
+            );
 
-              saveLocale(prefersSpanish ? "es" : "en");
-              if (prefersSpanish) {
-                window.location.replace("/es/");
-              }
+            saveLocale(prefersSpanish ? "es" : "en");
+            if (prefersSpanish) {
+              window.location.replace("/es/");
             }
           }
-        </script>
-      )
-    }
+        }
+      }
+    </script>
 
     <!-- SEO -->
     <title>{pageTitle}</title>

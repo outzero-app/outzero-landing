@@ -1,6 +1,10 @@
 ---
+/**
+ * Closing CTA — a full-bleed photo panel over a real spot image.
+ */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { fetchLandingSpots } from "../lib/spots";
 
 interface Props {
   locale: Locale;
@@ -8,53 +12,85 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
+const photo = (await fetchLandingSpots(locale)).showcase.cta;
 ---
 
 <section class="page-section" aria-labelledby="cta-title">
-  <div class="mx-auto max-w-4xl px-6 text-center lg:px-8">
-    <div class="section-intro section-intro--center">
-      <p class="section-kicker">{strings.cta_label}</p>
+  <div class="oz-container">
+    <div class="cta-panel">
+      {photo && <img src={photo} alt="" class="cta-photo" loading="lazy" />}
+      <div class="cta-overlay" aria-hidden="true"></div>
 
-      <h2 id="cta-title" class="section-title max-w-[14ch]">
-        {strings.cta_title}
-      </h2>
-      <p class="section-copy max-w-2xl">
-        {strings.cta_subtitle}
-      </p>
+      <div class="cta-content">
+        <h2 id="cta-title" class="cta-title">{strings.cta_title}</h2>
+        <p class="cta-sub">{strings.cta_subtitle}</p>
+        <div class="cta-actions">
+          <a href="https://web.outzero.app/explore" class="btn btn-primary btn-lg">{strings.cta_button}</a>
+        </div>
+        <p class="cta-helper">{strings.cta_helper}</p>
+      </div>
     </div>
-
-    <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-      <a
-        href="https://web.outzero.app"
-        class="group inline-flex items-center gap-2 rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-8 py-3.5 text-base font-semibold text-[var(--tag-green-fg)] transition-all hover:scale-105 active:scale-95 sm:text-lg"
-      >
-        {strings.cta_button}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 transition-transform group-hover:translate-x-1"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      </a>
-
-      <a
-        href="#features"
-        class="inline-flex items-center justify-center rounded-[var(--radius-brand)] border border-[var(--border)] px-6 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)] sm:text-base"
-        style="color: var(--text-primary);"
-      >
-        {strings.cta_secondary}
-      </a>
-    </div>
-
-    <p
-      class="mx-auto mt-4 max-w-lg text-xs font-light sm:text-sm"
-      style="color: var(--text-secondary);"
-    >
-      {strings.cta_helper}
-    </p>
   </div>
 </section>
+
+<style>
+  .cta-panel {
+    position: relative;
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    padding: clamp(56px, 9vw, 104px) clamp(24px, 5vw, 48px);
+    text-align: center;
+  }
+
+  .cta-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cta-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.72));
+  }
+
+  .cta-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-title {
+    margin: 0 auto;
+    max-width: 16ch;
+    font-size: clamp(30px, 5vw, 58px);
+    font-weight: 600;
+    line-height: 1.03;
+    letter-spacing: -1.8px;
+    color: var(--color-primary-white);
+  }
+
+  .cta-sub {
+    margin: 20px auto 0;
+    max-width: 560px;
+    font-size: clamp(15px, 1.5vw, 19px);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .cta-actions {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .cta-helper {
+    margin: 16px 0 0;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.6);
+  }
+</style>

@@ -61,8 +61,14 @@
   /* --- Font family --- */
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 
-  /* --- Border radius (consistent 8px across the app) --- */
+  /* --- Border radius (8px is the app-wide default) --- */
+  --radius-xs: 4px;
   --radius-brand: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
 }
 
 /* --------------------------------------------------------------------------
@@ -108,6 +114,24 @@
   /* Brand-specific */
   --social-button: var(--color-accent-blue);
   --admin-action: var(--color-accent-purple);
+
+  /* Alternate section background (splash) */
+  --splash: var(--color-splash-bg);
+
+  /* Hairline used over photos and on elevated cards */
+  --border-subtle: rgba(255, 255, 255, 0.13);
+
+  /* Elevation */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 12px 34px rgba(0, 0, 0, 0.55);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 140ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
 }
 
 /* --------------------------------------------------------------------------
@@ -143,6 +167,14 @@
 
   --social-button: var(--color-accent-blue);
   --admin-action: var(--color-accent-purple);
+
+  --splash: #F4F4F4;
+  --border-subtle: rgba(0, 0, 0, 0.12);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 12px 34px rgba(0, 0, 0, 0.16);
 }
 
 /* --------------------------------------------------------------------------
@@ -163,7 +195,14 @@ body {
 }
 
 .page-section {
-  padding-block: clamp(5.5rem, 9vw, 7.5rem);
+  padding-block: clamp(72px, 10vw, 120px);
+}
+
+/* Shared content column: 1200px with the design's fluid gutter. */
+.oz-container {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5vw, 48px);
 }
 
 .section-intro {
@@ -185,40 +224,50 @@ body {
 .section-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  line-height: 1;
+  letter-spacing: 2.2px;
   text-transform: uppercase;
 }
 
 .section-kicker::before {
   content: "";
-  width: 2.75rem;
+  width: 40px;
   height: 1px;
-  background: color-mix(in srgb, var(--tag-green) 34%, var(--border) 66%);
+  background: color-mix(in srgb, var(--tag-green) 45%, var(--border));
 }
 
 .section-kicker--muted::before {
   background: color-mix(in srgb, var(--border) 100%, transparent);
 }
 
+/* Centered section headers carry a rule on both sides of the label. */
+.section-kicker--both::after {
+  content: "";
+  width: 40px;
+  height: 1px;
+  background: color-mix(in srgb, var(--tag-green) 45%, var(--border));
+}
+
 .section-title {
   margin: 0;
   color: var(--text-primary);
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: clamp(30px, 4.6vw, 52px);
   font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.04em;
+  line-height: 1.04;
+  letter-spacing: -1.6px;
 }
 
 .section-copy {
   margin: 0;
   color: var(--text-secondary);
-  font-size: clamp(0.95rem, 1.3vw, 1.08rem);
-  line-height: 1.7;
+  font-size: clamp(15px, 1.4vw, 18px);
+  font-weight: 300;
+  line-height: 1.6;
 }
 
 section[id] {
@@ -230,6 +279,61 @@ button:focus-visible,
 [role="button"]:focus-visible {
   outline: 2px solid var(--tag-green);
   outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+ * Buttons (design system: primary / outline, sm / default / lg)
+ * --------------------------------------------------------------------------*/
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--radius-brand);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--duration-base) var(--ease-out),
+    background-color var(--duration-base) ease, color var(--duration-base) ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: scale(0.988);
+}
+
+.btn-primary {
+  background: var(--tag-green);
+  color: var(--tag-green-fg);
+  border: 1px solid transparent;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary-white);
+  border: 1px solid color-mix(in srgb, var(--color-primary-white) 45%, transparent);
+}
+
+.btn-outline:hover {
+  background: color-mix(in srgb, var(--color-primary-white) 10%, transparent);
+  color: var(--color-primary-white);
+}
+
+.btn-sm {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.82rem;
+}
+
+.btn-lg {
+  padding: 1.05rem 1.75rem;
+  font-size: 1rem;
 }
 
 .skip-link {
@@ -280,6 +384,26 @@ button:focus-visible,
 
 [data-theme="light"] .spot-icon {
   filter: brightness(0);
+}
+
+/* Recolor a white-source SVG to an arbitrary token via CSS mask, so icons can
+ * follow --tag-green (which differs between dark and light themes). The <img>
+ * src is mirrored into --icon-url by the consuming component. */
+.oz-icon-mask {
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon-url);
+  mask-image: var(--icon-url);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.oz-icon-mask--green {
+  color: var(--tag-green);
 }
 
 @media (min-width: 768px) {

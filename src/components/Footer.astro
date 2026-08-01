@@ -9,110 +9,93 @@ interface Props {
 const { locale } = Astro.props;
 const strings = t(locale);
 const homePath = localeHomePath(locale);
-const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
-const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero.app";
+const prefix = locale === "es" ? "/es" : "";
+
+const links = [
+  { href: "https://web.outzero.app", label: strings.footer_open_app },
+  { href: `${prefix}/privacy-policy`, label: strings.footer_privacy },
+  { href: `${prefix}/cookies-policy`, label: strings.footer_cookies },
+  { href: `${prefix}/terms-of-use`, label: strings.footer_terms },
+];
 ---
 
-<footer
-  class="border-t py-10"
-  style="border-color: var(--border); background: var(--background);"
->
-  <div class="mx-auto flex max-w-7xl flex-col gap-8 px-6 lg:px-8">
-    <div class="flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-between">
-    <!-- Logo -->
-      <a href={homePath} aria-label="Outzero home" class="shrink-0">
-        <img
-          src="/images/outzero_logo_white.svg"
-          alt="Outzero"
-          class="h-5 w-auto footer-logo"
-        />
-      </a>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href={homePath} aria-label="Outzero" class="footer-logo-link">
+      <img src="/images/outzero_logo_white.svg" alt="Outzero" class="footer-logo" />
+    </a>
 
-      <!-- Links -->
-      <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-light tracking-[0.01em]" style="color: var(--text-secondary);">
-        <a
-          href="https://web.outzero.app"
-          class="transition-colors hover:text-[var(--text-primary)]"
-        >
-          {strings.footer_open_app}
-        </a>
-        <span class="footer-separator" style="color: var(--border);">|</span>
-        <a
-          href={locale === "es" ? "/es/privacy-policy" : "/privacy-policy"}
-          class="transition-colors hover:text-[var(--text-primary)]"
-        >
-          {strings.footer_privacy}
-        </a>
-        <span class="footer-separator" style="color: var(--border);">|</span>
-        <a
-          href={locale === "es" ? "/es/cookies-policy" : "/cookies-policy"}
-          class="transition-colors hover:text-[var(--text-primary)]"
-        >
-          {strings.footer_cookies}
-        </a>
-        <span class="footer-separator" style="color: var(--border);">|</span>
-        <a
-          href={locale === "es" ? "/es/terms-of-use" : "/terms-of-use"}
-          class="transition-colors hover:text-[var(--text-primary)]"
-        >
-          {strings.footer_terms}
-        </a>
-      </div>
-
-      <!-- Store badges -->
-      <div class="flex flex-wrap items-center justify-center gap-3 lg:justify-end">
-        <a
-          href={appStoreUrl}
-          aria-label={strings.hero_download_ios}
-          class="footer-store-badge inline-flex rounded-[var(--radius-brand)] border border-[var(--border)] bg-[var(--background)] p-1 transition-colors hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tag-green)]"
-        >
-          <img
-            src="/images/app_store_badge.png"
-            alt={strings.hero_download_ios}
-            class="block h-9 w-auto"
-            loading="lazy"
-          />
-        </a>
-
-        <a
-          href={googlePlayUrl}
-          aria-label={strings.hero_download_android}
-          class="footer-store-badge inline-flex rounded-[var(--radius-brand)] border border-[var(--border)] bg-[var(--background)] p-1 transition-colors hover:bg-[var(--surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tag-green)]"
-        >
-          <img
-            src="/images/google_play_badge.png"
-            alt={strings.hero_download_android}
-            class="block h-9 w-auto"
-            loading="lazy"
-          />
-        </a>
-      </div>
+    <div class="footer-links">
+      {links.map((link) => (
+        <a href={link.href} class="footer-link">{link.label}</a>
+      ))}
     </div>
 
-    <div class="border-t pt-6" style="border-color: color-mix(in srgb, var(--border) 75%, transparent);">
-      <p class="text-center text-xs font-light lg:text-left" style="color: var(--text-secondary);">
-      {strings.footer_copyright}
-      </p>
-    </div>
+    <span class="footer-copy">{strings.footer_copyright}</span>
   </div>
 </footer>
 
 <style>
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding: 44px 0;
+    background: var(--background);
+  }
+
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 48px);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .footer-logo-link {
+    display: inline-flex;
+  }
+
+  .footer-logo {
+    height: 18px;
+    width: auto;
+    display: block;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+  }
+
+  .footer-link {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--duration-base) ease;
+  }
+
+  .footer-link:hover {
+    color: var(--text-primary);
+  }
+
+  .footer-copy {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+  }
+
   :global([data-theme="light"]) .footer-logo {
     filter: brightness(0);
   }
 
-  .footer-store-badge {
-    transition: transform 160ms ease, background-color 160ms ease;
-  }
-
-  .footer-store-badge:hover {
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 640px) {
-    .footer-separator {
-      display: none;
+  @media (max-width: 720px) {
+    .footer-inner {
+      justify-content: flex-start;
     }
   }
 </style>

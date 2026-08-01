@@ -11,8 +11,9 @@ const { locale, alternatePath } = Astro.props;
 const strings = t(locale);
 const altLocale = alternateLocale(locale);
 const homePath = localeHomePath(locale);
-const altPath = alternatePath ?? localeHomePath(altLocale);
-const altLabel = altLocale.toUpperCase();
+// `?lang=` makes the choice survive the auto-redirect on `/`, which reads it
+// before deciding anything (see Layout.astro).
+const altPath = `${alternatePath ?? localeHomePath(altLocale)}?lang=${altLocale}`;
 const sectionLinks = [
   { href: `${homePath}#spot-types`, label: strings.nav_spots },
   { href: `${homePath}#features`, label: strings.nav_features },
@@ -25,72 +26,90 @@ const sectionLinks = [
   class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
   aria-label="Primary"
 >
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-8">
-    <div class="flex min-w-0 items-center gap-8">
-      <!-- Logo -->
-      <a href={homePath} class="flex shrink-0 items-center" aria-label="Outzero home">
-        <img
-          src="/images/outzero_logo_white.svg"
-          alt="Outzero"
-          class="h-6 w-auto sm:h-7 logo-img"
-        />
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href={homePath} class="nav-logo-link" aria-label="Outzero">
+        <img src="/images/outzero_logo_white.svg" alt="Outzero" class="nav-logo" />
       </a>
 
-      <div class="hidden items-center gap-6 md:flex">
+      <div class="nav-links">
         {sectionLinks.map((link) => (
-          <a
-            href={link.href}
-            class="text-sm font-light tracking-[0.01em] transition-colors hover:text-[var(--text-primary)]"
-            style="color: var(--text-secondary);"
-          >
-            {link.label}
-          </a>
+          <a href={link.href} class="nav-link">{link.label}</a>
         ))}
       </div>
     </div>
 
-    <!-- Right side: lang switcher + CTA -->
-    <div class="flex shrink-0 items-center gap-3 sm:gap-4">
-      <!-- Language switcher -->
+    <div class="nav-right">
+      <!-- Language switcher: shows both locales, active one in brand green -->
       <a
         href={altPath}
-        data-locale-switch
-        data-locale={altLocale}
-        class="rounded-[var(--radius-brand)] border border-[var(--border)] px-2.5 py-1 text-[0.7rem] font-semibold tracking-[0.08em] transition-colors hover:border-[var(--text-secondary)]"
-        style="color: var(--text-secondary);"
+        class="lang-switch"
         aria-label={`Switch to ${altLocale === "es" ? "Spanish" : "English"}`}
       >
-        {altLabel}
+        <span class={locale === "es" ? "lang-active" : "lang-idle"}>ES</span>
+        <span class="lang-sep" aria-hidden="true">/</span>
+        <span class={locale === "en" ? "lang-active" : "lang-idle"}>EN</span>
       </a>
 
-      <!-- CTA -->
-      <a
-        href="https://web.outzero.app"
-        class="rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-5 py-2 text-sm font-semibold text-[var(--tag-green-fg)] transition-transform hover:scale-105 active:scale-95"
+      <a href="https://web.outzero.app" class="btn btn-primary btn-sm">{strings.nav_open_app}</a>
+
+      <button
+        type="button"
+        id="nav-toggle"
+        class="nav-toggle"
+        aria-controls="nav-mobile"
+        aria-expanded="false"
+        aria-label={strings.nav_menu}
       >
-        {strings.nav_open_app}
-      </a>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+        <span class="nav-toggle-bar" aria-hidden="true"></span>
+      </button>
     </div>
+  </div>
+
+  <div id="nav-mobile" class="nav-mobile" hidden>
+    {sectionLinks.map((link) => (
+      <a href={link.href} class="nav-mobile-link">{link.label}</a>
+    ))}
   </div>
 </nav>
 
 <script>
-  const STORAGE_KEY = "outzero-locale";
+  // The language choice is persisted from the `?lang=` param in Layout.astro,
+  // so this script only handles the scroll state and the mobile menu.
   const navbar = document.getElementById("navbar");
-  const localeSwitchLinks = document.querySelectorAll("[data-locale-switch]");
+  const toggle = document.getElementById("nav-toggle");
+  const mobileMenu = document.getElementById("nav-mobile");
 
-  localeSwitchLinks.forEach((link) => {
-    link.addEventListener("click", () => {
-      const nextLocale = link.getAttribute("data-locale");
-      if (nextLocale === "en" || nextLocale === "es") {
-        try {
-          window.localStorage.setItem(STORAGE_KEY, nextLocale);
-        } catch {
-          return;
-        }
+  if (toggle && mobileMenu) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      mobileMenu.hidden = !open;
+    };
+
+    toggle.addEventListener("click", () => {
+      setOpen(toggle.getAttribute("aria-expanded") !== "true");
+    });
+
+    // Following an in-page link should close the menu.
+    mobileMenu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => setOpen(false));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
       }
     });
-  });
+
+    // Leaving the mobile breakpoint must not strand the menu open.
+    const wide = window.matchMedia("(min-width: 881px)");
+    wide.addEventListener("change", (event) => {
+      if (event.matches) {
+        setOpen(false);
+      }
+    });
+  }
 
   if (navbar) {
     const syncNavbarState = () => {
@@ -107,19 +126,190 @@ const sectionLinks = [
 </script>
 
 <style>
-  .navbar-scrolled {
-    background-color: color-mix(in srgb, var(--background) 78%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  /* The bar is always semi-opaque with a blur, as in the design; scrolling
+     only deepens it. */
+  #navbar {
+    background-color: color-mix(in srgb, var(--background) 68%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   }
 
-  :global([data-theme="light"]) .navbar-scrolled {
-    background-color: color-mix(in srgb, var(--background) 86%, transparent);
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px clamp(20px, 5vw, 48px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    min-width: 0;
+  }
+
+  .nav-logo-link {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-logo {
+    height: 22px;
+    width: auto;
+    display: block;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+
+  .nav-link {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--duration-base) ease;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
+  /* The design hides the section links below 880px; a toggle takes over so the
+     sections stay reachable on mobile. */
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 34px;
+    height: 34px;
+    padding: 0 7px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-brand);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .nav-toggle-bar {
+    display: block;
+    width: 100%;
+    height: 1.5px;
+    border-radius: 2px;
+    background: var(--text-primary);
+    transition: transform var(--duration-base) var(--ease-out),
+      opacity var(--duration-base) ease;
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar:first-child {
+    transform: translateY(3.25px) rotate(45deg);
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar:last-child {
+    transform: translateY(-3.25px) rotate(-45deg);
+  }
+
+  .nav-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px clamp(20px, 5vw, 48px) 18px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  }
+
+  .nav-mobile[hidden] {
+    display: none;
+  }
+
+  .nav-mobile-link {
+    padding: 12px 0;
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  .nav-mobile-link:hover {
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 880px) {
+    .nav-links {
+      display: none;
+    }
+
+    .nav-toggle {
+      display: flex;
+    }
+  }
+
+  @media (min-width: 881px) {
+    .nav-mobile {
+      display: none;
+    }
+  }
+
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-brand);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-decoration: none;
+    transition: border-color var(--duration-base) ease;
+  }
+
+  .lang-switch:hover {
+    border-color: var(--text-secondary);
+  }
+
+  .lang-active {
+    color: var(--tag-green);
+  }
+
+  .lang-idle {
+    color: var(--text-secondary);
+  }
+
+  .lang-sep {
+    color: var(--text-secondary);
+    opacity: 0.5;
+  }
+
+  .navbar-scrolled {
+    background-color: color-mix(in srgb, var(--background) 88%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--border) 75%, transparent);
+  }
+
+  :global([data-theme="light"]) #navbar {
+    background-color: color-mix(in srgb, var(--background) 76%, transparent);
     border-bottom-color: color-mix(in srgb, var(--border) 22%, transparent);
   }
 
-  :global([data-theme="light"]) .logo-img {
+  :global([data-theme="light"]) .navbar-scrolled {
+    background-color: color-mix(in srgb, var(--background) 92%, transparent);
+  }
+
+  :global([data-theme="light"]) .nav-logo {
     filter: brightness(0);
   }
 </style>

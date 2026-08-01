@@ -1,0 +1,121 @@
+---
+/**
+ * Signature spot card from the design system: full-bleed photo, readability
+ * scrim, country top-right in brand green, and the spot name plus a green
+ * type tag bottom-left.
+ */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+import { countryDisplayName, spotTypeLabelSingular, spotUrl, type FeedSpot } from "../lib/spots";
+
+interface Props {
+  spot: FeedSpot;
+  locale: Locale;
+}
+
+const { spot, locale } = Astro.props;
+const strings = t(locale);
+const typeLabel = spotTypeLabelSingular(spot.spotType, strings);
+const country = countryDisplayName(spot.countryCode, locale);
+---
+
+<a
+  href={spotUrl(spot.id)}
+  target="_blank"
+  rel="noopener"
+  class="spot-card"
+  aria-label={`${spot.translation.name}, ${country}`}
+>
+  <img src={spot.coverUrl} alt="" class="spot-card-img" loading="lazy" />
+  <div class="spot-card-scrim" aria-hidden="true"></div>
+
+  <span class="spot-card-country">{country}</span>
+
+  <div class="spot-card-bottom">
+    <h3 class="spot-card-title">{spot.translation.name}</h3>
+    <span class="spot-card-type">{typeLabel}</span>
+  </div>
+</a>
+
+<style>
+  .spot-card {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .spot-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .spot-card:active {
+    transform: scale(0.988);
+  }
+
+  .spot-card-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .spot-card-scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 52%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 26%);
+  }
+
+  .spot-card-country {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    max-width: 60%;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--color-brand-green);
+  }
+
+  .spot-card-bottom {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .spot-card-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.4px;
+    color: var(--color-primary-white);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+
+  .spot-card-type {
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-brand-green);
+    color: var(--color-primary-black);
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+</style>

@@ -1,16 +1,29 @@
 ---
+/**
+ * Photo-led hero: a real verified spot photo behind the headline, with the two
+ * primary CTAs, the store badges and the proof chips.
+ */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { fetchLandingSpots } from "../lib/spots";
 
 interface Props {
   locale: Locale;
+  glow?: boolean;
+  showBadges?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, glow = true, showBadges = true } = Astro.props;
 const strings = t(locale);
+
 const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero.app";
-const heroProofs = [
+const exploreUrl = "https://web.outzero.app/explore";
+
+// A real mirador/summit shot rather than stock photography.
+const backdrop = (await fetchLandingSpots(locale)).showcase.hero;
+
+const proofs = [
   strings.hero_proof_exact_locations,
   strings.hero_proof_real_videos,
   strings.hero_proof_visual_routes,
@@ -18,340 +31,231 @@ const heroProofs = [
 ];
 ---
 
-<section
-  id="hero"
-  class="relative flex min-h-[100svh] items-center justify-center overflow-hidden"
->
-  <!-- Animated background gradient -->
-  <div class="hero-bg absolute inset-0 -z-10" aria-hidden="true"></div>
+<header id="hero" class="hero">
+  {backdrop && <img src={backdrop} alt="" class="hero-photo" fetchpriority="high" />}
+  <div class="hero-tint" aria-hidden="true"></div>
+  <div class="hero-fade" aria-hidden="true"></div>
+  {glow && <div class="hero-glow" aria-hidden="true"></div>}
 
-  <!-- Floating green glow orbs -->
-  <div class="hero-orb hero-orb--1 absolute -z-10" aria-hidden="true"></div>
-  <div class="hero-orb hero-orb--2 absolute -z-10" aria-hidden="true"></div>
-  <div class="hero-orb hero-orb--3 absolute -z-10" aria-hidden="true"></div>
-
-  <!-- Content -->
-  <div class="hero-content relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 text-center lg:px-8">
-    <div class="mx-auto mb-6 flex justify-center">
-      <div class="hero-kicker">
-        <img
-          src="/images/outzero_icon_white.svg"
-          alt=""
-          class="hero-icon h-4 w-auto opacity-80"
-          aria-hidden="true"
-        />
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="hero-rule" aria-hidden="true"></span>
         <span>{strings.hero_eyebrow}</span>
       </div>
-    </div>
 
-    <!-- Headline -->
-    <h1
-      class="hero-title mx-auto max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
-      style="color: var(--text-primary); letter-spacing: -1px; line-height: 1.1;"
-    >
-      {strings.hero_headline_1}
-      <span class="block text-[var(--tag-green)]">{strings.hero_headline_2}</span>
-    </h1>
+      <h1 class="hero-title">
+        {strings.hero_headline_1}{" "}
+        <span class="hero-title-accent">{strings.hero_headline_2}</span>
+      </h1>
 
-    <!-- Subheadline -->
-    <p
-      class="hero-subheadline mx-auto mt-6 max-w-2xl text-base font-light sm:text-lg md:text-xl"
-      style="color: var(--text-secondary); line-height: 1.6;"
-    >
-      {strings.hero_subheadline}
-    </p>
+      <p class="hero-sub">{strings.hero_subheadline}</p>
 
-    <!-- CTA actions -->
-    <div class="hero-actions mx-auto mt-10 flex w-full max-w-[40rem] flex-col items-center gap-4">
-      <div class="hero-actions-row grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-        <a
-          href="https://web.outzero.app"
-          class="hero-action-button group relative inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-brand)] bg-[var(--tag-green)] px-8 py-3.5 text-base font-semibold text-[var(--tag-green-fg)] transition-all hover:scale-105 active:scale-95 sm:text-lg"
-        >
-          {strings.hero_cta}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 transition-transform group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </a>
-
-        <a
-          href="#features"
-          class="hero-action-button inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-brand)] border border-[var(--border)] px-6 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
-          style="color: var(--text-primary);"
-        >
-          {strings.hero_learn_more}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </a>
+      <div class="hero-actions">
+        <a href={exploreUrl} class="btn btn-primary btn-lg">{strings.hero_cta}</a>
+        <a href="#features" class="btn btn-outline btn-lg">{strings.hero_learn_more}</a>
       </div>
 
-      <div class="hero-actions-row grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-        <a
-          href={appStoreUrl}
-          aria-label={strings.hero_download_ios}
-          class="hero-action-button store-badge-link inline-flex w-full items-center justify-center rounded-[var(--radius-brand)] border border-[var(--border)] bg-[var(--background)] p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tag-green)] hover:bg-[var(--surface)]"
-        >
-          <img
-            src="/images/app_store_badge.png"
-            alt={strings.hero_download_ios}
-            class="store-badge h-10 w-auto"
-            loading="eager"
-          />
-        </a>
+      {showBadges && (
+        <div class="hero-badges">
+          <a href={appStoreUrl} aria-label={strings.hero_download_ios}>
+            <img src="/images/app_store_badge.png" alt={strings.hero_download_ios} class="store-badge" />
+          </a>
+          <a href={googlePlayUrl} aria-label={strings.hero_download_android}>
+            <img src="/images/google_play_badge.png" alt={strings.hero_download_android} class="store-badge" />
+          </a>
+        </div>
+      )}
 
-        <a
-          href={googlePlayUrl}
-          aria-label={strings.hero_download_android}
-          class="hero-action-button store-badge-link inline-flex w-full items-center justify-center rounded-[var(--radius-brand)] border border-[var(--border)] bg-[var(--background)] p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tag-green)] hover:bg-[var(--surface)]"
-        >
-          <img
-            src="/images/google_play_badge.png"
-            alt={strings.hero_download_android}
-            class="store-badge h-10 w-auto"
-            loading="eager"
-          />
-        </a>
-      </div>
-    </div>
+      <p class="hero-hint">{strings.hero_web_hint}</p>
 
-    <p
-      class="mx-auto mt-4 max-w-2xl text-sm font-light sm:text-base"
-      style="color: var(--text-secondary);"
-    >
-      {strings.hero_web_hint}
-    </p>
-
-    <ul class="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2" role="list">
-      {heroProofs.map((proof) => (
-        <li>
-          <span class="inline-flex items-center gap-2 text-xs font-semibold sm:text-sm" style="color: var(--text-primary);">
-            <span class="h-1.5 w-1.5 rounded-full bg-[var(--tag-green)]" aria-hidden="true"></span>
+      <div class="hero-proofs">
+        {proofs.map((proof) => (
+          <span class="hero-proof">
+            <span class="hero-dot" aria-hidden="true"></span>
             {proof}
           </span>
-        </li>
-      ))}
-    </ul>
+        ))}
+      </div>
+    </div>
   </div>
-
-  <!-- Scroll hint -->
-  <div class="hero-scroll-hint absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-6 w-6 opacity-40"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="1.5"
-      style="color: var(--text-secondary);"
-    >
-      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
-  </div>
-</section>
+</header>
 
 <style>
-  .hero-content {
-    padding-top: clamp(6rem, 11vh, 8rem);
-    padding-bottom: clamp(4rem, 8vh, 6rem);
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
   }
 
-  .hero-kicker {
+  .hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-tint {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.64) 46%, rgba(0, 0, 0, 0.3) 100%);
+  }
+
+  .hero-fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.4) 0%,
+      transparent 22%,
+      transparent 55%,
+      var(--background) 100%
+    );
+  }
+
+  .hero-glow {
+    position: absolute;
+    bottom: -140px;
+    left: -80px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: var(--color-brand-green);
+    filter: blur(150px);
+    opacity: 0.16;
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 120px clamp(20px, 5vw, 48px) 80px;
+  }
+
+  .hero-content {
+    max-width: 760px;
+    animation: ozUp 0.7s var(--ease-out) both;
+  }
+
+  @keyframes ozUp {
+    from {
+      opacity: 0;
+      transform: translateY(22px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .hero-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    color: var(--text-secondary);
-    font-size: 0.72rem;
+    gap: 12px;
+    margin-bottom: 22px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.18em;
+    letter-spacing: 2.4px;
     text-transform: uppercase;
+    color: var(--tag-green);
   }
 
-  .hero-kicker::before {
-    content: "";
-    width: 2.75rem;
+  .hero-rule {
+    width: 42px;
     height: 1px;
-    background: color-mix(in srgb, var(--tag-green) 34%, var(--border) 66%);
+    background: var(--tag-green);
+    opacity: 0.8;
   }
 
-  .hero-bg {
-    background: radial-gradient(
-        ellipse 80% 60% at 50% 120%,
-        color-mix(in srgb, var(--color-brand-green) 10%, transparent) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 60% 50% at 80% 20%,
-        color-mix(in srgb, var(--color-accent-blue) 8%, transparent) 0%,
-        transparent 60%
-      ),
-      var(--background);
+  .hero-title {
+    margin: 0;
+    font-size: clamp(44px, 7.2vw, 86px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -2.5px;
+    color: var(--color-primary-white);
+    text-wrap: balance;
   }
 
-  .hero-orb {
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.15;
+  .hero-title-accent {
+    color: var(--color-brand-green);
   }
 
-  .hero-orb--1 {
-    width: 400px;
-    height: 400px;
-    background: var(--color-brand-green);
-    top: 10%;
-    left: -5%;
-    animation: float-1 12s ease-in-out infinite;
+  .hero-sub {
+    margin: 26px 0 0;
+    max-width: 560px;
+    font-size: clamp(16px, 1.6vw, 20px);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.86);
   }
 
-  .hero-orb--2 {
-    width: 300px;
-    height: 300px;
-    background: var(--color-accent-blue);
-    bottom: 10%;
-    right: -5%;
-    animation: float-2 15s ease-in-out infinite;
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 36px;
+    align-items: center;
   }
 
-  .hero-orb--3 {
-    width: 200px;
-    height: 200px;
-    background: var(--color-brand-green);
-    top: 50%;
-    left: 60%;
-    animation: float-3 10s ease-in-out infinite;
-  }
-
-  @keyframes float-1 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(40px, -30px); }
-  }
-  @keyframes float-2 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-30px, 20px); }
-  }
-  @keyframes float-3 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(-20px, -40px); }
-  }
-
-  :global([data-theme="light"]) .hero-bg {
-    background: radial-gradient(
-        ellipse 80% 60% at 50% 120%,
-        color-mix(in srgb, var(--color-brand-green-dark) 9%, transparent) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 60% 50% at 80% 20%,
-        color-mix(in srgb, var(--color-accent-blue) 9%, transparent) 0%,
-        transparent 60%
-      ),
-      var(--background);
-  }
-
-  :global([data-theme="light"]) .hero-icon {
-    filter: brightness(0);
-  }
-
-  :global([data-theme="light"]) .hero-orb {
-    opacity: 0.08;
-  }
-
-  .store-badge-link {
-    transition: transform 160ms ease, opacity 160ms ease;
-  }
-
-  .hero-action-button {
-    min-height: 4rem;
-  }
-
-  .hero-actions-row {
-    align-items: stretch;
-  }
-
-  .store-badge-link:hover {
-    transform: translateY(-2px);
-    opacity: 0.96;
+  .hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
   }
 
   .store-badge {
+    height: 50px;
     display: block;
+    transition: transform var(--duration-base) var(--ease-out);
   }
 
-  @media (max-height: 880px) {
-    .hero-content {
-      padding-top: 5.5rem;
-      padding-bottom: 3rem;
-    }
-
-    .hero-title {
-      font-size: clamp(3rem, 7vw, 5rem);
-    }
-
-    .hero-subheadline {
-      margin-top: 1rem;
-      font-size: 1.05rem;
-      line-height: 1.5;
-    }
-
-    .hero-actions {
-      margin-top: 1.75rem;
-      gap: 0.875rem;
-    }
-
-    .hero-action-button {
-      min-height: 3.75rem;
-    }
-
-    .store-badge {
-      height: 2.5rem;
-    }
+  .store-badge:hover {
+    transform: translateY(-2px);
   }
 
-  @media (max-height: 760px) {
-    .hero-content {
-      padding-top: 5rem;
-      padding-bottom: 2.5rem;
-    }
+  .hero-hint {
+    margin: 22px 0 0;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.62);
+  }
 
-    .hero-title {
-      font-size: clamp(2.5rem, 6vw, 4.25rem);
-      line-height: 1.05;
-    }
+  .hero-proofs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin-top: 26px;
+  }
 
-    .hero-subheadline {
-      max-width: 46rem;
-      font-size: 1rem;
-      line-height: 1.45;
-    }
+  .hero-proof {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary-white);
+  }
 
-    .hero-actions {
-      margin-top: 1.5rem;
-    }
+  .hero-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-brand-green);
+  }
 
-    .hero-action-button {
-      min-height: 3.5rem;
-    }
-
+  @media (max-width: 640px) {
     .store-badge {
-      height: 2.25rem;
-    }
-
-    .hero-scroll-hint {
-      bottom: 1.25rem;
+      height: 42px;
     }
   }
 </style>

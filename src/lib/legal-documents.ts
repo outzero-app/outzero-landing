@@ -113,48 +113,89 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+/**
+ * Renders the subset of Markdown the legal documents actually use: ATX
+ * headings up to `######`, unordered and ordered lists, and paragraphs.
+ */
 export function renderSimpleMarkdown(markdown: string): string {
   const lines = markdown.split("\n");
   const htmlParts: string[] = [];
   let paragraphLines: string[] = [];
+  let listItems: string[] = [];
+  let listTag: "ul" | "ol" | null = null;
 
   const flushParagraph = () => {
-    if (paragraphLines.length === 0) {
-      return;
-    }
-
     const paragraph = paragraphLines.join(" ").trim();
+    paragraphLines = [];
+
     if (paragraph) {
       htmlParts.push(`<p>${escapeHtml(paragraph)}</p>`);
     }
+  };
 
-    paragraphLines = [];
+  const flushList = () => {
+    if (listItems.length > 0 && listTag) {
+      const items = listItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+      htmlParts.push(`<${listTag}>${items}</${listTag}>`);
+    }
+
+    listItems = [];
+    listTag = null;
+  };
+
+  const flushAll = () => {
+    flushParagraph();
+    flushList();
   };
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
 
     if (!line) {
-      flushParagraph();
+      flushAll();
       continue;
     }
 
-    if (line.startsWith("## ")) {
-      flushParagraph();
-      htmlParts.push(`<h2>${escapeHtml(line.slice(3).trim())}</h2>`);
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (heading) {
+      flushAll();
+      const level = heading[1].length;
+      htmlParts.push(`<h${level}>${escapeHtml(heading[2].trim())}</h${level}>`);
       continue;
     }
 
-    if (line.startsWith("# ")) {
+    const bullet = /^[-*+]\s+(.*)$/.exec(line);
+    if (bullet) {
       flushParagraph();
-      htmlParts.push(`<h1>${escapeHtml(line.slice(2).trim())}</h1>`);
+      if (listTag !== "ul") {
+        flushList();
+        listTag = "ul";
+      }
+      listItems.push(bullet[1].trim());
+      continue;
+    }
+
+    const numbered = /^\d+[.)]\s+(.*)$/.exec(line);
+    if (numbered) {
+      flushParagraph();
+      if (listTag !== "ol") {
+        flushList();
+        listTag = "ol";
+      }
+      listItems.push(numbered[1].trim());
+      continue;
+    }
+
+    // A plain line right after a bullet is a continuation of that item.
+    if (listTag && listItems.length > 0) {
+      listItems[listItems.length - 1] += ` ${line}`;
       continue;
     }
 
     paragraphLines.push(line);
   }
 
-  flushParagraph();
+  flushAll();
 
   return htmlParts.join("\n");
 }

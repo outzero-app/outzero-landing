@@ -1,0 +1,112 @@
+---
+/**
+ * "Empieza en la web. Llévatelo en el bolsillo." — clarifies the difference
+ * between outzero.app (this marketing site) and web.outzero.app (the app).
+ */
+import type { Locale } from "../i18n/translations";
+import { t } from "../i18n/translations";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const strings = t(locale);
+const appStoreUrl = "https://apps.apple.com/us/app/outzero/id6760965247";
+const googlePlayUrl = "https://play.google.com/store/apps/details?id=com.outzero.app";
+---
+
+<section class="page-section" aria-labelledby="platforms-title">
+  <div class="oz-container">
+    <div class="section-intro section-intro--center">
+      <p class="section-kicker section-kicker--both">{strings.platforms_label}</p>
+      <h2 id="platforms-title" class="section-title max-w-[18ch]">{strings.platforms_title}</h2>
+    </div>
+
+    <div class="platforms-grid">
+      <article class="platform-card">
+        <span class="platform-label">{strings.platforms_web_label}</span>
+        <h3 class="platform-title">{strings.platforms_web_title}</h3>
+        <p class="platform-desc">{strings.platforms_web_desc}</p>
+        <div>
+          <a href="https://web.outzero.app/explore" class="btn btn-primary">{strings.platforms_web_cta}</a>
+        </div>
+      </article>
+
+      <article class="platform-card">
+        <span class="platform-label">{strings.platforms_mobile_label}</span>
+        <h3 class="platform-title">{strings.platforms_mobile_title}</h3>
+        <p class="platform-desc">{strings.platforms_mobile_desc}</p>
+        <div class="platform-badges">
+          <a href={appStoreUrl} aria-label={strings.hero_download_ios}>
+            <img src="/images/app_store_badge.png" alt={strings.hero_download_ios} class="platform-badge" loading="lazy" />
+          </a>
+          <a href={googlePlayUrl} aria-label={strings.hero_download_android}>
+            <img src="/images/google_play_badge.png" alt={strings.hero_download_android} class="platform-badge" loading="lazy" />
+          </a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 48px;
+  }
+
+  .platform-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-2xl);
+    background: var(--surface);
+  }
+
+  .platform-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tag-green);
+  }
+
+  .platform-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.6px;
+    color: var(--text-primary);
+  }
+
+  .platform-desc {
+    margin: 0;
+    flex: 1;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .platform-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .platform-badge {
+    height: 48px;
+    display: block;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .platform-badge:hover {
+    transform: translateY(-2px);
+  }
+</style>

@@ -3,7 +3,10 @@ import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Hero from "../components/Hero.astro";
 import SpotTypes from "../components/SpotTypes.astro";
+import AppPreview from "../components/AppPreview.astro";
+import SpotFeed from "../components/SpotFeed.astro";
 import Features from "../components/Features.astro";
+import Platforms from "../components/Platforms.astro";
 import About from "../components/About.astro";
 import CTA from "../components/CTA.astro";
 import Footer from "../components/Footer.astro";
@@ -16,7 +19,10 @@ const locale = "en" as const;
   <main id="main-content">
     <Hero locale={locale} />
     <SpotTypes locale={locale} />
+    <AppPreview locale={locale} />
+    <SpotFeed locale={locale} />
     <Features locale={locale} />
+    <Platforms locale={locale} />
     <About locale={locale} />
     <CTA locale={locale} />
   </main>

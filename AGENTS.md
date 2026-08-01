@@ -21,13 +21,20 @@ outzero-landing/
 ├── public/
 │   ├── fonts/              # Poppins TTF (Light, SemiBold, Bold)
 │   ├── icons/spots/        # Spot type SVG icons (from Flutter app)
+│   ├── icons/navigation/   # Nav glyphs: eye, location, home_active, explore, route, profile
+│   ├── icons/ui/           # UI glyphs: filter, like, add, satellite, search, send
 │   ├── images/             # Logos (SVG/PNG), icon mark
 │   ├── favicon.png         # Browser tab icon
 │   └── og-image.png        # Open Graph preview (1200x630)
 ├── src/
 │   ├── components/         # Astro components (Navbar, Hero, etc.)
+│   ├── i18n/
+│   │   └── translations.ts # All copy, ES/EN, typed
 │   ├── layouts/
-│   │   └── Layout.astro    # Base HTML layout (head, meta, fonts)
+│   │   └── Layout.astro    # Base HTML layout (head, meta, fonts, locale redirect)
+│   ├── lib/
+│   │   ├── legal-documents.ts # Legal markdown fetched from GitHub at build time
+│   │   └── spots.ts        # Firebase spot data fetched at build time
 │   ├── pages/
 │   │   └── index.astro     # Landing page entry point
 │   └── styles/
@@ -72,7 +79,20 @@ Raw palette tokens (for gradients/effects only): `--color-brand-green`, `--color
 
 ### Border Radius
 
-Consistent `8px` — use `rounded-[var(--radius-brand)]` or `var(--radius-brand)` in inline styles.
+`--radius-brand` (8px) is the default — buttons, inputs, small chips. The scale also has
+`--radius-xs` 4, `--radius-md` 12, `--radius-lg` 16 (feature/category tiles), `--radius-xl` 20,
+`--radius-2xl` 24 (spot cards, photo panels) and `--radius-full` 999 (pills, avatars).
+
+### Elevation, motion and hairlines
+
+`--shadow-sm/md/lg` and `--shadow-card` for elevation; `--border-subtle` for the hairline used
+over photos; `--ease-out` plus `--duration-fast/base/slow` for transitions. Never inline a raw
+`cubic-bezier` or shadow.
+
+### Buttons
+
+Use the shared `.btn` classes from `global.css`: `.btn.btn-primary` / `.btn.btn-outline`,
+sized with `.btn-sm` / `.btn-lg`. Do not re-implement button styling per component.
 
 ### Using Colors in Templates
 
@@ -86,7 +106,13 @@ Consistent `8px` — use `rounded-[var(--radius-brand)]` or `var(--radius-brand)
 
 ### Spot Type Icons
 
-SVG icons at `/icons/spots/{name}.svg`. They have `fill="#fff"` baked in. Use the `.spot-icon` CSS class which applies `filter: brightness(0) invert(1)` (dark) / `filter: brightness(0)` (light) to adapt them.
+SVG icons at `/icons/spots/{name}.svg`. They have `fill="#fff"` baked in.
+
+- **White/black (theme-following)**: `<img class="spot-icon">` — applies `filter: brightness(0) invert(1)` (dark) / `filter: brightness(0)` (light).
+- **Brand green**: `<span class="oz-icon-mask oz-icon-mask--green" style="--icon-url: url('/icons/spots/x.svg')">`. This masks the SVG and paints it with `currentColor`, so it follows `--tag-green` in both themes — a CSS `filter` cannot hit an arbitrary token.
+
+Inside the phone mockup (`AppPreview.astro`) the screen is black in *both* themes, so icons there
+are pinned to white / `--color-brand-green` rather than the theme-following tokens.
 
 ### Theme Switching
 
@@ -101,6 +127,68 @@ The landing defaults to dark theme (`data-theme="dark"` on `<html>`). To support
 - **Accessibility**: Semantic HTML, `alt` attributes, `aria-label` on icon-only links, `aria-hidden` on decorative elements.
 - **Images**: Use `loading="lazy"` for below-the-fold images.
 
+## Spot Data (Firebase)
+
+Real spots are fetched **at build time** in `src/lib/spots.ts` — never from the browser. This keeps
+the site fully static, avoids CORS, and means no Firebase SDK or credentials ship to the client.
+Data comes from the already-deployed Cloud Functions in `europe-west1`, which only return
+`statusCode === 'VERIFIED'` spots:
+
+| Function | Used for |
+|----------|----------|
+| `getTopSpotsByType` | Category flip tiles, feed grid, editorial backdrops |
+| `getVerifiedSpotsPaginated` | Phone mockup mini-feed |
+| `getUserProfile` | Author handle on the mini-feed card |
+
+### Which spots get featured
+
+The selection is **randomised per build**, so the daily rebuild refreshes the page even when the
+underlying data hasn't changed, and two local builds show two different line-ups. Candidates are
+drawn with a weighted shuffle biased towards views/likes/ratings, then filtered for country and
+spot-type variety.
+
+```bash
+npm run dev                            # re-draws on every page refresh
+npm run build                          # new line-up every time
+OUTZERO_SPOT_SEED=12345 npm run build  # reproduce a specific one (also works with dev)
+```
+
+Every build prints the seed it used (`[spots] build seed …`), so a line-up you liked can always be
+reproduced. Within a build the seed is keyed per purpose (`feed`, `tile:VWP`, `mini-feed`,
+`showcase:hero`, …) rather than one advancing stream, so `/` and `/es/` always feature the same
+spots. `astro dev` instead re-draws on every render, which makes previewing variety a page refresh
+— pin `OUTZERO_SPOT_SEED` when you need dev to hold still.
+
+⚠️ Spot counters (`likesCount`, `averageRating`, `reviewCount`, `viewCount`, `shareCount`) are
+**absent** on older documents, not zero — that's why they're optional in `SpotPreview`. Always
+coalesce them; a single `NaN` reaching a sort comparator makes every comparison false and silently
+leaves the list unsorted.
+
+Rules when touching this layer:
+
+- **Every fetch must degrade gracefully.** A failure logs a warning and returns `null`/`[]`; the
+  consuming section then renders nothing rather than breaking the build.
+- **Image URLs must be resolved, not guessed.** Variants (`_card`, `_large`, …) are generated on
+  upload, so older media is missing the larger sizes. `coverUrlFor()` HEAD-checks and walks down
+  the variant scale, falling back to the original. Variant URLs drop the original's `token` —
+  reusing it returns 403.
+- **Full-bleed backdrops use the original file, not a variant.** `_xlarge` caps at 1280px, which
+  visibly softens a 100svh hero. `imageInfo()` reads the real pixel size from the file header via a
+  ranged request, and `SHOWCASE_REQUIREMENTS` filters on width, aspect ratio and byte size.
+  The app uploads at `maxWidth: 1920, maxHeight: 1080`, so **most spot photos are portrait**
+  (810x1080, 608x1080): orientation, not megapixels, is what makes a photo unusable as a wide
+  backdrop. Hero/CTA demand landscape, the story card demands portrait.
+  Keep the top requirement tier loose enough that several photos qualify — a stricter bar leaves a
+  single eligible photo and freezes the rotation on one image.
+- **Videos have no image variants.** `media[0]` may be an `.mp4`; appending `_card` to it 404s.
+  Derive the poster with `videoThumbnailUrl()` (`media/videos/x.mp4` →
+  `media/thumbnails/x_thumbnail.png`, ending in a bare `?alt=media`), mirroring
+  `_constructThumbnailUrl` in the Flutter app.
+- **Spot types are the 12 real `SpotType` codes.** The design mocked a "Trekking" tile, but no such
+  code exists in the app's enum — `CMP` (Camping) is the real twelfth category.
+
+`.github/workflows/deploy.yml` runs a daily cron so the featured spots stay fresh without a push.
+
 ## Assets Origin
 
 All assets are copied from the Flutter app (`outzero_app`):
@@ -111,10 +199,24 @@ All assets are copied from the Flutter app (`outzero_app`):
 | SVG logos | `assets/images/logos/outzero_logo_*.svg` |
 | SVG icon mark | `assets/images/icons/outzero_icon_*.svg` |
 | Spot type icons | `assets/icons/spots/*.svg` |
+| Navigation icons | `assets/icons/navigation/*.svg` |
+| UI icons | `assets/icons/ui/*.svg` |
 | Favicon | `web/favicon.png` |
 | OG image | `web/og-image.png` |
 
 When updating assets, re-copy from the Flutter project source.
+
+## Internationalization
+
+All copy lives in `src/i18n/translations.ts`, typed by the `Translations` interface, with `en` as
+the default (no URL prefix) and `es` under `/es/`. Strings needing inline emphasis are stored as a
+single `*_html` string containing `<em>` (brand green) or `<strong>` (primary text) and rendered
+with `set:html` — do not split a sentence into lead/highlight/tail fragments.
+
+The language choice travels in the URL (`/es/?lang=es`). `Layout.astro` reads `?lang=` in an
+inline head script *before* the browser-language auto-redirect and persists it, then cleans the
+URL. Never move that persistence into a deferred component script: the redirect would race it and
+bounce the user back to the previous language.
 
 ## Deployment
 
@@ -122,11 +224,13 @@ Hosted via **GitHub Pages** from the `outzero-app` GitHub organization. Custom d
 
 ## Quick Checklist
 
-- [ ] Never hardcode colors — use CSS custom properties
+- [ ] Never hardcode colors, shadows, easings or radii — use CSS custom properties
 - [ ] Use `font-weight: 300` for body, `600` for headings/buttons
-- [ ] Use `rounded-[var(--radius-brand)]` for border radius
-- [ ] Use `.spot-icon` class on spot type SVG `<img>` tags
+- [ ] Use the shared `.btn` classes instead of per-component button styles
+- [ ] Use `.spot-icon` for white/black icons, `.oz-icon-mask--green` for brand-green ones
+- [ ] New copy goes in `translations.ts` for **both** `en` and `es`
+- [ ] Spot data fetched in `src/lib/spots.ts` at build time, never client-side
+- [ ] Any new spot image goes through `coverUrlFor()` so videos and missing variants are handled
 - [ ] Add `alt` text to all meaningful images
-- [ ] Test responsiveness at 320px, 768px, 1024px, 1440px
-- [ ] Test both dark and light themes
+- [ ] Test responsiveness at 375px, 768px, 1024px, 1440px
 - [ ] Run `npm run build` before committing

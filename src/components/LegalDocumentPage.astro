@@ -81,12 +81,58 @@ const lastUpdatedText = documentData.lastUpdatedAt
     margin-bottom: 0.85rem;
   }
 
+  .legal-document :global(h3) {
+    color: var(--text-primary);
+    font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+    font-weight: 600;
+    line-height: 1.35;
+    margin-top: 1.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .legal-document :global(h4),
+  .legal-document :global(h5),
+  .legal-document :global(h6) {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
   .legal-document :global(p) {
     color: var(--text-secondary);
     font-size: 1rem;
     font-weight: 300;
     line-height: 1.85;
     margin: 0 0 1rem;
+  }
+
+  .legal-document :global(ul),
+  .legal-document :global(ol) {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.85;
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+  }
+
+  .legal-document :global(ul) {
+    list-style: disc;
+  }
+
+  .legal-document :global(ol) {
+    list-style: decimal;
+  }
+
+  .legal-document :global(li) {
+    margin-bottom: 0.4rem;
+  }
+
+  .legal-document :global(li)::marker {
+    color: var(--tag-green);
   }
 
   .legal-document :global(h1 + h2) {

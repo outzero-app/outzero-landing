@@ -1,11 +1,10 @@
 ---
 /**
- * About / Story section.
- * Large statement text with brand green highlights.
- * Stats strip removed per feedback.
+ * "Nuestra historia" — narrative copy alongside a real spot photo.
  */
 import type { Locale } from "../i18n/translations";
 import { t } from "../i18n/translations";
+import { fetchLandingSpots } from "../lib/spots";
 
 interface Props {
   locale: Locale;
@@ -13,60 +12,92 @@ interface Props {
 
 const { locale } = Astro.props;
 const strings = t(locale);
+const photo = (await fetchLandingSpots(locale)).showcase.story;
 ---
 
-<section id="about" class="page-section" aria-labelledby="about-title">
-  <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.9fr_1.5fr] lg:gap-16">
-      <div class="section-intro section-intro--left lg:pt-2">
-        <p class="section-kicker section-kicker--muted">
-          {strings.about_label}
-        </p>
+<section id="about" class="story-section" aria-labelledby="about-title">
+  <div class="oz-story-grid">
+    <div>
+      <p class="section-kicker">{strings.about_label}</p>
 
-        <p class="section-copy max-w-sm">
-          {strings.about_side_note}
-        </p>
-      </div>
+      <h2 id="about-title" class="story-headline" set:html={strings.about_headline_html}></h2>
 
-      <div>
-        <h2
-          id="about-title"
-          class="text-xl font-light leading-relaxed sm:text-2xl lg:text-3xl"
-          style="color: var(--text-primary); letter-spacing: -0.4px; line-height: 1.5;"
-          set:html={strings.about_headline.replace(
-            locale === "es"
-              ? "viajeros jóvenes, curiosos y con ganas de adrenalina"
-              : "young, curious travelers",
-            `<span class="font-semibold text-[var(--tag-green)]">${
-              locale === "es"
-                ? "viajeros jóvenes, curiosos y con ganas de adrenalina"
-                : "young, curious travelers"
-            }</span>`
-          )}
-        />
+      <p class="story-copy">{strings.about_paragraph_1}</p>
 
-        <p
-          class="mt-6 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
-          style="color: var(--text-secondary); line-height: 1.7;"
-        >
-          {strings.about_paragraph_1}
-        </p>
-
-        <p
-          class="mt-4 text-sm font-light leading-relaxed sm:text-base lg:text-lg"
-          style="color: var(--text-secondary); line-height: 1.7;"
-          set:html={strings.about_paragraph_2.replace(
-            locale === "es"
-              ? "spots increíbles que merecían ser descubiertos"
-              : "incredible spots that deserved to be discovered",
-            `<span class="font-semibold" style="color: var(--text-primary);">${
-              locale === "es"
-                ? "spots increíbles que merecían ser descubiertos"
-                : "incredible spots that deserved to be discovered"
-            }</span>`
-          )}
-        />
-      </div>
+      <p class="story-copy" set:html={strings.about_paragraph_2_html}></p>
     </div>
+
+    {photo && (
+      <div>
+        <img src={photo} alt="" class="story-photo" loading="lazy" />
+      </div>
+    )}
   </div>
 </section>
+
+<style>
+  .story-section {
+    padding-block: clamp(72px, 10vw, 120px);
+    background: var(--splash);
+    border-block: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    scroll-margin-top: 80px;
+  }
+
+  .oz-story-grid {
+    display: grid;
+    gap: 48px;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 48px);
+  }
+
+  @media (max-width: 880px) {
+    .oz-story-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .story-headline {
+    margin: 16px 0 0;
+    font-size: clamp(20px, 2.4vw, 30px);
+    font-weight: 300;
+    line-height: 1.5;
+    letter-spacing: -0.4px;
+    color: var(--text-primary);
+  }
+
+  .story-headline :global(em) {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--tag-green);
+  }
+
+  .story-copy {
+    margin: 22px 0 0;
+    font-size: clamp(14px, 1.3vw, 17px);
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  .story-copy + .story-copy {
+    margin-top: 14px;
+  }
+
+  .story-copy :global(strong) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .story-photo {
+    width: 100%;
+    max-height: 440px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+  }
+</style>
