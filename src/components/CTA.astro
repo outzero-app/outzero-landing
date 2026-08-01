@@ -16,12 +16,32 @@ const strings = t(locale);
 const landing = await fetchLandingSpots(locale);
 const photo = landing.showcase.cta;
 const ctaPool = landing.rotation.cta;
+const ctaPoolForClient =
+  ctaPool.length > 0
+    ? ctaPool
+    : photo
+      ? [
+          {
+            id: photo.spotId,
+            name: photo.name,
+            url: photo.url,
+            author: photo.authorHandle,
+          },
+        ]
+      : [];
 ---
 
 <section class="page-section" data-cta-root aria-labelledby="cta-title">
   <div class="oz-container">
     <div class="cta-panel">
-      {photo && <img src={photo.url} alt="" class="cta-photo" data-cta-photo loading="lazy" />}
+      {photo && (
+        <>
+          <img alt="" class="cta-photo" data-cta-photo loading="lazy" />
+          <noscript>
+            <img src={photo.url} alt="" class="cta-photo" loading="lazy" />
+          </noscript>
+        </>
+      )}
       <div class="cta-overlay" aria-hidden="true"></div>
       {photo && <PhotoCredit image={photo} locale={locale} />}
 
@@ -37,7 +57,7 @@ const ctaPool = landing.rotation.cta;
   </div>
 </section>
 
-<script type="application/json" data-cta-rotation set:html={JSON.stringify(ctaPool)}></script>
+<script type="application/json" data-cta-rotation set:html={JSON.stringify(ctaPoolForClient)}></script>
 
 <script>
   interface RotationPhoto {

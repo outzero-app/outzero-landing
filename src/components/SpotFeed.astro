@@ -31,7 +31,7 @@ const gridPool = landing.rotation.grid;
         <p class="feed-support-copy">{strings.feed_subtitle}</p>
       </div>
 
-      <div class="feed-grid">
+      <div class="feed-grid" data-feed-grid style="visibility: hidden;">
         {feedSpots.map((spot) => (
           <SpotCard spot={spot} locale={locale} />
         ))}
@@ -41,6 +41,14 @@ const gridPool = landing.rotation.grid;
 )}
 
 <script type="application/json" data-feed-rotation set:html={JSON.stringify(gridPool)}></script>
+
+<noscript>
+  <style>
+    [data-feed-grid] {
+      visibility: visible !important;
+    }
+  </style>
+</noscript>
 
 <script>
   interface RotationOption {
@@ -63,6 +71,7 @@ const gridPool = landing.rotation.grid;
 
   const rotationNode = document.querySelector<HTMLScriptElement>("[data-feed-rotation]");
   const pool = rotationNode?.textContent ? JSON.parse(rotationNode.textContent) as RotationOption[] : [];
+  const grid = document.querySelector<HTMLElement>("[data-feed-grid]");
   const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-spot-card]"));
 
   if (cards.length > 0 && pool.length > 0) {
@@ -83,6 +92,10 @@ const gridPool = landing.rotation.grid;
       card.querySelector<HTMLElement>("[data-spot-card-title]")?.replaceChildren(picked.name);
       card.querySelector<HTMLElement>("[data-spot-card-type]")?.replaceChildren(picked.typeLabel);
     });
+  }
+
+  if (grid) {
+    grid.style.visibility = "visible";
   }
 </script>
 

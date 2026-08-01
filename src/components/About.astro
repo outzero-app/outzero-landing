@@ -16,6 +16,19 @@ const strings = t(locale);
 const landing = await fetchLandingSpots(locale);
 const photo = landing.showcase.story;
 const storyPool = landing.rotation.story;
+const storyPoolForClient =
+  storyPool.length > 0
+    ? storyPool
+    : photo
+      ? [
+          {
+            id: photo.spotId,
+            name: photo.name,
+            url: photo.url,
+            author: photo.authorHandle,
+          },
+        ]
+      : [];
 ---
 
 <section id="about" class="story-section" data-story-root aria-labelledby="about-title">
@@ -32,14 +45,17 @@ const storyPool = landing.rotation.story;
 
     {photo && (
       <div class="story-photo-wrap">
-        <img src={photo.url} alt="" class="story-photo" data-story-photo loading="lazy" />
+        <img alt="" class="story-photo" data-story-photo loading="lazy" />
+        <noscript>
+          <img src={photo.url} alt="" class="story-photo" loading="lazy" />
+        </noscript>
         <PhotoCredit image={photo} locale={locale} placement="bottom-left" />
       </div>
     )}
   </div>
 </section>
 
-<script type="application/json" data-story-rotation set:html={JSON.stringify(storyPool)}></script>
+<script type="application/json" data-story-rotation set:html={JSON.stringify(storyPoolForClient)}></script>
 
 <script>
   interface RotationPhoto {
