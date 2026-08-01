@@ -221,7 +221,13 @@ Rules when touching this:
   runs once the whole document is parsed. Everything else is `loading="lazy"` and far below the
   fold, so it is swapped long before the browser asks for it.
 - **Never hide a section until the script has run.** An `opacity: 0` waiting on JS means one thrown
-  exception leaves the section blank.
+  exception leaves the section blank. `fadeInImage()` (`src/scripts/fade-in-image.ts`) is the one
+  thing allowed to hide an image, and only *after* a 200ms grace period — while there is still
+  nothing painted, so it can never flash. If the photo beats the grace it is never touched.
+  Don't try to make this smarter by testing for a cache hit: measured on localhost these photos take
+  210–380ms from `src` to `load` whether cached or not, because the cost is decoding a 1–2 megapixel
+  JPEG, not the transfer. For `loading="lazy"` images the timer is armed by an IntersectionObserver
+  at 200px instead of at page load, since the browser doesn't start fetching them until much later.
 - **Don't `createElement` inside `PhotoCredit`.** Astro's scoped styles key off a `data-astro-cid-*`
   attribute that a script-created element won't have, so it renders unstyled. The author `<span>` is
   always in the markup and just gets `hidden` toggled.

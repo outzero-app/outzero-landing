@@ -47,6 +47,8 @@ const gridPool = landing.rotation.grid;
 )}
 
 <script>
+  import { fadeInImage } from "../scripts/fade-in-image";
+
   interface RotationOption {
     id: string;
     name: string;
@@ -119,7 +121,12 @@ const gridPool = landing.rotation.grid;
       card.setAttribute("data-spot-id", picked.id);
       card.setAttribute("aria-label", `${picked.name}, ${picked.country}`);
 
-      card.querySelector<HTMLImageElement>("[data-spot-card-cover]")?.setAttribute("src", picked.cover);
+      const cover = card.querySelector<HTMLImageElement>("[data-spot-card-cover]");
+      if (cover) {
+        fadeInImage(cover);
+        cover.setAttribute("src", picked.cover);
+      }
+
       card.querySelector<HTMLElement>("[data-spot-card-country]")?.replaceChildren(picked.country);
       card.querySelector<HTMLElement>("[data-spot-card-title]")?.replaceChildren(picked.name);
       card.querySelector<HTMLElement>("[data-spot-card-type]")?.replaceChildren(picked.typeLabel);

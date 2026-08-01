@@ -430,6 +430,26 @@ button:focus-visible,
   color: var(--tag-green);
 }
 
+/* --------------------------------------------------------------------------
+ * Utility: fade a photo in, but only when it's slow to arrive
+ *
+ * The rotating photos get their src from JavaScript, so a slow one would
+ * otherwise pop in. `.oz-img-pending` is applied only after a short grace
+ * period — while there is still nothing painted, so hiding it costs nothing —
+ * and dropped once the image loads, which transitions it to full opacity. An
+ * image that comes back within the grace period never gets the class at all
+ * and appears instantly, with no fade.
+ *
+ * Neither class exists in the markup: without JavaScript the photo just shows.
+ * --------------------------------------------------------------------------*/
+.oz-img-fade {
+  transition: opacity 0.45s var(--ease-out);
+}
+
+.oz-img-pending {
+  opacity: 0;
+}
+
 @media (min-width: 768px) {
   .section-intro {
     gap: 1.25rem;
