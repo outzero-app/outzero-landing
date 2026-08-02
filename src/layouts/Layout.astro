@@ -186,9 +186,18 @@ const structuredData = JSON.stringify([
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
 
-    <!-- Preload critical fonts -->
-    <link rel="preload" href="/fonts/Poppins-Light.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/Poppins-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
+    <!--
+      Preload critical fonts — the latin partition, all three weights.
+      The hero's paragraph is what LCP ends up measuring: it paints in the
+      fallback face and repaints once Poppins lands, and that repaint registers
+      a new LCP candidate. All three weights are above the fold, and the one
+      that used to be left out was discovered by the parser a second late and
+      then held the repaint back. At 8KB each that is a cheap thing to
+      guarantee; it was not when they were 50KB.
+    -->
+    <link rel="preload" href="/fonts/Poppins-Light-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Poppins-SemiBold-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Poppins-Bold-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen overflow-x-hidden">
     <a href="#main-content" class="skip-link">{strings.skip_to_content}</a>

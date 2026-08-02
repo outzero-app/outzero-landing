@@ -225,13 +225,20 @@ const proofs = [
     animation: ozUp 0.7s var(--ease-out) both;
   }
 
+  /* Rises into place, but never fades in, and that omission is deliberate.
+     Chrome will not accept an element as an LCP candidate if its first paint
+     happens at zero opacity, and it does not reconsider it afterwards. With a
+     fade on this container, every headline, paragraph and button in the hero
+     was disqualified, so the metric fell to whichever small thing happened to
+     paint after the animation finished — a store badge one run, the navbar
+     logo the next — which is why LCP swung between 2.5s and 9.1s while nothing
+     about the page changed. Sliding alone keeps the entrance and lets the
+     subheading, the largest piece of content on the screen, be measured. */
   @keyframes ozUp {
     from {
-      opacity: 0;
       transform: translateY(22px);
     }
     to {
-      opacity: 1;
       transform: none;
     }
   }
